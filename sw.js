@@ -4,7 +4,7 @@
 // chamadas Supabase sempre vão direto na rede (precisam ser frescas).
 // ============================================================
 
-const CACHE = 'lifeos-v3';
+const CACHE = 'lifeos-v4';
 const SHELL = [
   './',
   './index.html',

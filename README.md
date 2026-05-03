@@ -29,6 +29,7 @@ life-os/
 1. Cria um projeto novo em [supabase.com](https://supabase.com).
 2. SQL Editor → cola `supabase/schema.sql` → Run.
    Cria 13 tabelas, RLS por usuário e triggers.
+3. Roda também as migrations em `supabase/migrations/` na ordem (são idempotentes — pode rodar de novo sem problema).
 
 ### 2. Auth (magic link)
 No painel Supabase:

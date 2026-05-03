@@ -20,6 +20,7 @@ window.LifeStore = (function () {
     workouts: [],
     workoutGoal: 0,
     trips: [],
+    todos: [],
     reserve: 0,
     reserveGoal: 0,
     energy: {},            // { 'YYYY-MM-DD': 1..5 }
@@ -106,6 +107,19 @@ window.LifeStore = (function () {
       fromDb: r => ({ id: r.id, title: r.title, type: r.type, date: r.target_date, cost: Number(r.cost), saved: Number(r.saved), notes: r.notes || '' }),
       toDb: t => ({ title: t.title, type: t.type, target_date: t.date || null, cost: t.cost, saved: t.saved, notes: t.notes }),
     },
+    todo: {
+      fromDb: r => ({
+        id: r.id, title: r.title, notes: r.notes || '',
+        dueDate: r.due_date,
+        completedAt: r.completed_at,
+        createdAt: r.created_at,
+      }),
+      toDb: t => ({
+        title: t.title, notes: t.notes || null,
+        due_date: t.dueDate,
+        completed_at: t.completedAt || null,
+      }),
+    },
   };
 
   // Reconstrói state.habitLog (formato 'YYYY-WXX-D') a partir das datas reais vindas do banco
@@ -140,9 +154,10 @@ window.LifeStore = (function () {
       sb.from('trips').select('*').eq('user_id', uid).order('target_date', { ascending: true, nullsFirst: false }),
       sb.from('user_preferences').select('*').eq('user_id', uid).maybeSingle(),
       sb.from('daily_metrics').select('*').eq('user_id', uid),
+      sb.from('todos').select('*').eq('user_id', uid).order('created_at', { ascending: false }),
     ]);
 
-    const [tx, cards, inv, goals, habits, hlogs, fam, study, sess, wk, tr, prefs, dm] = queries;
+    const [tx, cards, inv, goals, habits, hlogs, fam, study, sess, wk, tr, prefs, dm, todos] = queries;
 
     for (const q of queries) if (q.error) console.error('Load error:', q.error);
 
@@ -157,6 +172,7 @@ window.LifeStore = (function () {
     state.studySessions= (sess.data || []).map(map.sess.fromDb);
     state.workouts     = (wk.data || []).map(map.workout.fromDb);
     state.trips        = (tr.data || []).map(map.trip.fromDb);
+    state.todos        = (todos.data || []).map(map.todo.fromDb);
 
     state.reserve = state.reserveGoal = state.familyGoal = state.workoutGoal = 0;
     if (prefs.data) {
@@ -352,6 +368,41 @@ window.LifeStore = (function () {
     state.trips = state.trips.filter(t => t.id !== id);
   }
 
+  // ===== TODOS =====
+  async function addTodo({ title, notes = '', dueDate }) {
+    const row = await _insert('todos', map.todo.toDb({ title, notes, dueDate: dueDate || new Date().toISOString().slice(0, 10) }));
+    state.todos.unshift(map.todo.fromDb(row));
+  }
+  async function updateTodo(id, patch) {
+    const row = await _update('todos', id, map.todo.toDb({ ...state.todos.find(t => t.id === id), ...patch }));
+    const i = state.todos.findIndex(t => t.id === id);
+    if (i >= 0) state.todos[i] = map.todo.fromDb(row);
+  }
+  async function toggleTodo(id, complete) {
+    const completed_at = complete ? new Date().toISOString() : null;
+    const { data, error } = await sb.from('todos').update({ completed_at }).eq('id', id).select().single();
+    if (error) { toast('Erro: ' + error.message, 'error'); throw error; }
+    showSaving();
+    const i = state.todos.findIndex(t => t.id === id);
+    if (i >= 0) state.todos[i] = map.todo.fromDb(data);
+  }
+  async function deferTodo(id, days = 1) {
+    const todo = state.todos.find(t => t.id === id);
+    if (!todo) return;
+    const d = new Date(todo.dueDate + 'T00:00:00');
+    d.setDate(d.getDate() + days);
+    const newDate = d.toISOString().slice(0, 10);
+    const { data, error } = await sb.from('todos').update({ due_date: newDate }).eq('id', id).select().single();
+    if (error) { toast('Erro: ' + error.message, 'error'); throw error; }
+    showSaving();
+    const i = state.todos.findIndex(t => t.id === id);
+    if (i >= 0) state.todos[i] = map.todo.fromDb(data);
+  }
+  async function deleteTodo(id) {
+    await _delete('todos', id);
+    state.todos = state.todos.filter(t => t.id !== id);
+  }
+
   // ===== PREFERENCES =====
   async function setPrefs(patch) {
     const dbPatch = {};
@@ -510,6 +561,15 @@ window.LifeStore = (function () {
       notes: t.notes || null,
     })));
 
+    // todos
+    await bulk('todos', (dump.todos || []).map(t => ({
+      user_id: uid,
+      title: t.title || '(sem título)',
+      notes: t.notes || null,
+      due_date: t.dueDate || t.due_date || new Date().toISOString().slice(0, 10),
+      completed_at: t.completedAt || t.completed_at || null,
+    })).filter(t => t.title));
+
     // daily_metrics (energy + focus)
     const metricsByDate = {};
     for (const [d, v] of Object.entries(dump.energy || {})) metricsByDate[d] = { energy: Number(v) };
@@ -547,6 +607,7 @@ window.LifeStore = (function () {
       reserveGoal: state.reserveGoal,
       energy: state.energy,
       focus: state.focus,
+      todos: state.todos,
     };
   }
 
@@ -562,6 +623,7 @@ window.LifeStore = (function () {
     saveStudyItem, deleteStudyItem, logStudySession,
     saveWorkout, deleteWorkout,
     saveTrip, deleteTrip,
+    addTodo, updateTodo, toggleTodo, deferTodo, deleteTodo,
     setPrefs, setDailyMetric,
     importBackup, exportBackup,
   };

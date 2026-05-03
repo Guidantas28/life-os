@@ -61,6 +61,7 @@ window.closeModal = UI.closeModal;
 // ===== Navigation =====
 const titles = {
   dashboard: { bc: 'LIFE_OS / DASHBOARD', t: () => greeting() },
+  tarefas:   { bc: 'LIFE_OS / TAREFAS', t: 'Tarefas do <em>dia</em>' },
   financas: { bc: 'LIFE_OS / FINANCAS / VISAO', t: 'Visão <em>financeira</em>' },
   cartoes: { bc: 'LIFE_OS / FINANCAS / CARTOES', t: 'Cartões de <em>crédito</em>' },
   investimentos: { bc: 'LIFE_OS / FINANCAS / INVESTIMENTOS', t: 'Investimentos &amp; <em>patrimônio</em>' },
@@ -855,6 +856,232 @@ function renderTrips() {
   }
 }
 
+// ===== TODOS =====
+async function quickAddTodo() {
+  const input = document.getElementById('todoQuickInput');
+  const title = input.value.trim();
+  if (!title) return;
+  try {
+    await Store.addTodo({ title, dueDate: todayISO() });
+    input.value = '';
+    renderTodos();
+  } catch {}
+}
+
+window.toggleTodoConfirm = async (id, makeComplete) => {
+  try { await Store.toggleTodo(id, makeComplete); renderTodos(); } catch {}
+};
+window.deleteTodoConfirm = async (id) => {
+  if (!confirm('Excluir tarefa?')) return;
+  try { await Store.deleteTodo(id); renderTodos(); } catch {}
+};
+window.deferTodoOne = async (id) => {
+  try { await Store.deferTodo(id, 1); renderTodos(); } catch {}
+};
+
+window.openTodoModal = (id) => {
+  const t = state.todos.find(x => x.id === id);
+  if (!t) return;
+  UI.showModal(`
+    <h3>Editar tarefa</h3>
+    <div class="modal-form-row full">
+      <div><label>Título</label><input type="text" id="tdTitle" value="${escapeHtml(t.title)}"></div>
+    </div>
+    <div class="modal-form-row full">
+      <div><label>Notas (opcional)</label><textarea id="tdNotes" rows="3" placeholder="Detalhes, links, contexto...">${escapeHtml(t.notes || '')}</textarea></div>
+    </div>
+    <div class="modal-form-row">
+      <div><label>Data alvo</label><input type="date" id="tdDate" value="${t.dueDate}"></div>
+      <div>
+        <label>Status</label>
+        <select id="tdStatus">
+          <option value="open" ${!t.completedAt ? 'selected' : ''}>Aberta</option>
+          <option value="done" ${t.completedAt ? 'selected' : ''}>Concluída</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-danger" onclick="deleteTodoConfirm('${t.id}')">Excluir</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn" onclick="saveTodoFromForm('${t.id}')">Salvar</button>
+    </div>
+  `);
+};
+
+window.saveTodoFromForm = async (id) => {
+  const title  = document.getElementById('tdTitle').value.trim();
+  const notes  = document.getElementById('tdNotes').value.trim();
+  const dueDate = document.getElementById('tdDate').value || todayISO();
+  const status = document.getElementById('tdStatus').value;
+  if (!title) { UI.toast('Título obrigatório', 'error'); return; }
+  const cur = state.todos.find(t => t.id === id);
+  const completedAt = status === 'done'
+    ? (cur?.completedAt || new Date().toISOString())
+    : null;
+  try {
+    await Store.updateTodo(id, { title, notes, dueDate, completedAt });
+    UI.closeModal();
+    renderTodos();
+  } catch {}
+};
+
+function daysBetween(a, b) {
+  // diff em dias (a - b), tratando como datas locais
+  const ad = new Date(a + 'T00:00:00');
+  const bd = new Date(b + 'T00:00:00');
+  return Math.round((ad - bd) / 86400000);
+}
+
+function renderTodos() {
+  const today = todayISO();
+  const list      = document.getElementById('todoList');
+  const doneCard  = document.getElementById('todoDoneCard');
+  const doneList  = document.getElementById('todoDoneList');
+  const futureCard = document.getElementById('todoFutureCard');
+  const futureList = document.getElementById('todoFutureList');
+
+  // Pendentes <= hoje (inclui atrasadas)
+  const pending = state.todos.filter(t => !t.completedAt && t.dueDate <= today);
+  // Concluídas hoje
+  const completedToday = state.todos.filter(t => t.completedAt && t.completedAt.slice(0, 10) === today);
+  // Pendentes futuras
+  const future = state.todos.filter(t => !t.completedAt && t.dueDate > today)
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+
+  // Ordena: atrasadas primeiro (mais antiga no topo), depois hoje
+  pending.sort((a, b) => a.dueDate.localeCompare(b.dueDate) || a.createdAt.localeCompare(b.createdAt));
+
+  // Stats
+  document.getElementById('todoTodayCount').textContent = pending.length;
+  document.getElementById('todoDoneCount').textContent  = completedToday.length;
+  document.getElementById('todoListBadge').textContent  = pending.length;
+
+  const overdueCount = pending.filter(t => t.dueDate < today).length;
+  const overdueDelta = document.getElementById('todoOverdueDelta');
+  if (overdueCount > 0) {
+    overdueDelta.textContent = `↘ ${overdueCount} atrasada${overdueCount > 1 ? 's' : ''} de dias anteriores`;
+    overdueDelta.classList.add('neg');
+  } else {
+    overdueDelta.textContent = pending.length === 0 && completedToday.length > 0
+      ? '✓ dia limpo'
+      : '— sem atrasadas';
+    overdueDelta.classList.remove('neg');
+  }
+
+  // Streak: dias consecutivos zerando (sem pendentes ao fim do dia)
+  // simplificação: conta dias seguidos terminados em 0 pendentes; usamos dados disponíveis
+  // (se nunca teve tarefa, streak = 0)
+  document.getElementById('todoStreakCount').textContent = computeTodoStreak();
+
+  // Render pending
+  if (!pending.length) {
+    list.innerHTML = '<div class="empty-state">Nenhuma tarefa pra hoje. Aproveita o tempo livre.</div>';
+  } else {
+    list.innerHTML = pending.map(t => {
+      const overdueDays = daysBetween(today, t.dueDate);
+      const overdueBadge = overdueDays > 0
+        ? `<span class="todo-overdue">atrasada ${overdueDays}d</span>`
+        : '';
+      const notesPreview = t.notes
+        ? `<span style="color: var(--ink-faint);">· ${escapeHtml(t.notes.slice(0, 60))}${t.notes.length > 60 ? '…' : ''}</span>`
+        : '';
+      return `
+        <div class="todo-row" onclick="openTodoModal('${t.id}')">
+          <div class="todo-check" onclick="event.stopPropagation(); toggleTodoConfirm('${t.id}', true)"></div>
+          <div class="todo-body">
+            <div class="todo-title">${escapeHtml(t.title)}</div>
+            <div class="todo-meta">
+              ${overdueBadge}
+              ${notesPreview}
+            </div>
+          </div>
+          <div class="todo-actions" onclick="event.stopPropagation()">
+            <button class="todo-action" title="Adiar 1 dia" onclick="deferTodoOne('${t.id}')">→</button>
+            <button class="todo-action" title="Excluir" onclick="deleteTodoConfirm('${t.id}')">×</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // Render concluídas hoje
+  if (completedToday.length === 0) {
+    doneCard.hidden = true;
+  } else {
+    doneCard.hidden = false;
+    doneList.innerHTML = completedToday
+      .sort((a, b) => (b.completedAt || '').localeCompare(a.completedAt || ''))
+      .map(t => `
+        <div class="todo-row done" onclick="openTodoModal('${t.id}')">
+          <div class="todo-check checked" onclick="event.stopPropagation(); toggleTodoConfirm('${t.id}', false)"></div>
+          <div class="todo-body">
+            <div class="todo-title">${escapeHtml(t.title)}</div>
+          </div>
+          <div class="todo-actions" onclick="event.stopPropagation()">
+            <button class="todo-action" title="Excluir" onclick="deleteTodoConfirm('${t.id}')">×</button>
+          </div>
+        </div>`).join('');
+  }
+
+  // Render agendadas futuras
+  if (future.length === 0) {
+    futureCard.hidden = true;
+  } else {
+    futureCard.hidden = false;
+    futureList.innerHTML = future.map(t => {
+      const inDays = daysBetween(t.dueDate, today);
+      return `
+        <div class="todo-row" onclick="openTodoModal('${t.id}')">
+          <div class="todo-check" onclick="event.stopPropagation(); toggleTodoConfirm('${t.id}', true)"></div>
+          <div class="todo-body">
+            <div class="todo-title">${escapeHtml(t.title)}</div>
+            <div class="todo-meta">
+              <span class="todo-future">${inDays === 1 ? 'amanhã' : `em ${inDays}d · ${formatDate(t.dueDate)}`}</span>
+            </div>
+          </div>
+          <div class="todo-actions" onclick="event.stopPropagation()">
+            <button class="todo-action" title="Excluir" onclick="deleteTodoConfirm('${t.id}')">×</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+}
+
+function computeTodoStreak() {
+  // dias consecutivos terminando hoje (ou ontem) sem pendentes não-cumpridas
+  // só conta dias em que existiu pelo menos uma tarefa
+  const byDay = new Map(); // dia -> { hadTask, allDone }
+  const today = todayISO();
+  for (const t of state.todos) {
+    const day = t.dueDate;
+    if (day > today) continue;
+    if (!byDay.has(day)) byDay.set(day, { had: 0, done: 0 });
+    const e = byDay.get(day);
+    e.had++;
+    if (t.completedAt) e.done++;
+  }
+  const days = [...byDay.keys()].sort().reverse();
+  let streak = 0;
+  let cursor = new Date();
+  // se hoje ainda tem pendente, começa contando ontem
+  const todayState = byDay.get(today);
+  if (todayState && todayState.had > todayState.done) cursor.setDate(cursor.getDate() - 1);
+
+  for (let i = 0; i < days.length; i++) {
+    const d = cursor.toISOString().slice(0, 10);
+    const entry = byDay.get(d);
+    if (!entry) {
+      // Dia sem tarefas — pula sem quebrar
+      cursor.setDate(cursor.getDate() - 1);
+      continue;
+    }
+    if (entry.had === entry.done) {
+      streak++;
+      cursor.setDate(cursor.getDate() - 1);
+    } else break;
+  }
+  return streak;
+}
+
 // ===== MODAL backdrop =====
 function setupModalBackdrop() {
   document.getElementById('modalBackdrop').addEventListener('click', e => {
@@ -953,6 +1180,7 @@ function renderAll() {
   renderStudy();
   renderWorkouts();
   renderTrips();
+  renderTodos();
   renderSettings();
   document.getElementById('pageTitle').innerHTML = (() => {
     const active = document.querySelector('.page.active');
@@ -976,6 +1204,12 @@ function bindStaticButtons() {
   document.getElementById('btnLogStudy').addEventListener('click', logStudySessionFromForm);
   document.getElementById('btnNewWorkout').addEventListener('click', () => window.openWorkoutModal());
   document.getElementById('btnNewTrip').addEventListener('click', () => window.openTripModal());
+
+  document.getElementById('btnAddTodo').addEventListener('click', quickAddTodo);
+  const todoInput = document.getElementById('todoQuickInput');
+  todoInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); quickAddTodo(); }
+  });
 
   document.getElementById('famGoalInput').addEventListener('change', saveFamilyGoalFromInput);
   document.getElementById('wkGoal').addEventListener('change', saveWorkoutGoalFromInput);

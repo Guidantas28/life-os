@@ -71,6 +71,9 @@
       <div class="nav-item active" data-page="dashboard">
         <span class="nav-icon">◉</span><span>Dashboard</span>
       </div>
+      <div class="nav-item" data-page="tarefas">
+        <span class="nav-icon">☐</span><span>Tarefas do dia</span>
+      </div>
     </div>
 
     <div class="nav-section">
@@ -202,6 +205,48 @@
         <div id="dashTrips">
           <div class="empty-state">Nenhum plano cadastrado</div>
         </div>
+      </div>
+    </section>
+
+    <!-- ============= TAREFAS DO DIA ============= -->
+    <section class="page" id="page-tarefas">
+      <div class="dash-grid-3">
+        <div class="hero-stat">
+          <div class="label">Pendentes Hoje</div>
+          <div class="value"><span id="todoTodayCount">0</span></div>
+          <div class="delta" id="todoOverdueDelta">— sem atrasadas</div>
+        </div>
+        <div class="card stat-mini">
+          <div class="card-title">Concluídas Hoje</div>
+          <div><div class="value emerald" id="todoDoneCount">0</div></div>
+        </div>
+        <div class="card stat-mini">
+          <div class="card-title">Streak de dias zerados</div>
+          <div><div class="value" id="todoStreakCount">0</div><div class="sub">dias seguidos zerando</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="todo-quick-add">
+          <input type="text" id="todoQuickInput" placeholder="+ Nova tarefa (Enter pra adicionar)" autocomplete="off">
+          <button class="btn" id="btnAddTodo">+</button>
+        </div>
+        <div class="muted-12 mt-8">Tarefas não cumpridas aparecem aqui no dia seguinte automaticamente, marcadas como atrasadas.</div>
+      </div>
+
+      <div class="card mt-16">
+        <div class="card-title">Hoje <span class="badge" id="todoListBadge">0</span></div>
+        <div id="todoList"><div class="empty-state">Nenhuma tarefa pra hoje. Aproveita o tempo livre.</div></div>
+      </div>
+
+      <div class="card mt-16" id="todoDoneCard" hidden>
+        <div class="card-title">Concluídas hoje</div>
+        <div id="todoDoneList"></div>
+      </div>
+
+      <div class="card mt-16" id="todoFutureCard" hidden>
+        <div class="card-title">Agendadas pra próximos dias</div>
+        <div id="todoFutureList"></div>
       </div>
     </section>
 
@@ -536,10 +581,10 @@
 
   <!-- BOTTOM NAV (mobile) -->
   <nav class="bottom-nav">
+    <button class="bn-item" data-page="tarefas"><span class="bn-icon">☐</span><span>Tarefas</span></button>
     <button class="bn-item active" data-page="dashboard"><span class="bn-icon">◉</span><span>Hoje</span></button>
     <button class="bn-item" data-page="financas"><span class="bn-icon">$</span><span>Finanças</span></button>
     <button class="bn-item" data-page="rotina"><span class="bn-icon">⌘</span><span>Rotina</span></button>
-    <button class="bn-item" data-page="metas"><span class="bn-icon">◎</span><span>Metas</span></button>
     <button class="bn-item" id="bnMoreBtn"><span class="bn-icon">⋯</span><span>Mais</span></button>
   </nav>
 </div>
@@ -558,6 +603,7 @@
     <div class="sheet-title">Navegar</div>
     <div class="sheet-grid">
       <button class="sheet-link" data-page="dashboard"><span class="bn-icon">◉</span> Dashboard</button>
+      <button class="sheet-link" data-page="tarefas"><span class="bn-icon">☐</span> Tarefas do dia</button>
       <button class="sheet-link" data-page="financas"><span class="bn-icon">$</span> Finanças</button>
       <button class="sheet-link" data-page="cartoes"><span class="bn-icon">▤</span> Cartões</button>
       <button class="sheet-link" data-page="investimentos"><span class="bn-icon">↗</span> Investimentos</button>
