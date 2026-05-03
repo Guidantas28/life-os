@@ -21,6 +21,8 @@ window.LifeStore = (function () {
     workoutGoal: 0,
     trips: [],
     todos: [],
+    recurringPayments: [],
+    recurringPaymentLogs: [],
     reserve: 0,
     reserveGoal: 0,
     energy: {},            // { 'YYYY-MM-DD': 1..5 }
@@ -120,6 +122,31 @@ window.LifeStore = (function () {
         completed_at: t.completedAt || null,
       }),
     },
+    recurring: {
+      fromDb: r => ({
+        id: r.id, name: r.name,
+        amount: Number(r.amount),
+        dueDay: r.due_day,
+        category: r.category || '',
+        notes: r.notes || '',
+        active: !!r.active,
+      }),
+      toDb: r => ({
+        name: r.name, amount: r.amount,
+        due_day: r.dueDay,
+        category: r.category || '',
+        notes: r.notes || null,
+        active: r.active !== false,
+      }),
+    },
+    recurringLog: {
+      fromDb: r => ({
+        recurringId: r.recurring_id,
+        period: r.period,
+        paidAt: r.paid_at,
+        amountPaid: r.amount_paid != null ? Number(r.amount_paid) : null,
+      }),
+    },
   };
 
   // Reconstrói state.habitLog (formato 'YYYY-WXX-D') a partir das datas reais vindas do banco
@@ -155,9 +182,11 @@ window.LifeStore = (function () {
       sb.from('user_preferences').select('*').eq('user_id', uid).maybeSingle(),
       sb.from('daily_metrics').select('*').eq('user_id', uid),
       sb.from('todos').select('*').eq('user_id', uid).order('created_at', { ascending: false }),
+      sb.from('recurring_payments').select('*').eq('user_id', uid).order('due_day'),
+      sb.from('recurring_payment_logs').select('*').eq('user_id', uid),
     ]);
 
-    const [tx, cards, inv, goals, habits, hlogs, fam, study, sess, wk, tr, prefs, dm, todos] = queries;
+    const [tx, cards, inv, goals, habits, hlogs, fam, study, sess, wk, tr, prefs, dm, todos, rec, recLogs] = queries;
 
     for (const q of queries) if (q.error) console.error('Load error:', q.error);
 
@@ -173,6 +202,8 @@ window.LifeStore = (function () {
     state.workouts     = (wk.data || []).map(map.workout.fromDb);
     state.trips        = (tr.data || []).map(map.trip.fromDb);
     state.todos        = (todos.data || []).map(map.todo.fromDb);
+    state.recurringPayments    = (rec.data || []).map(map.recurring.fromDb);
+    state.recurringPaymentLogs = (recLogs.data || []).map(map.recurringLog.fromDb);
 
     state.reserve = state.reserveGoal = state.familyGoal = state.workoutGoal = 0;
     if (prefs.data) {
@@ -403,6 +434,50 @@ window.LifeStore = (function () {
     state.todos = state.todos.filter(t => t.id !== id);
   }
 
+  // ===== RECURRING PAYMENTS =====
+  async function saveRecurring(rec) {
+    if (rec.id) {
+      const row = await _update('recurring_payments', rec.id, map.recurring.toDb(rec));
+      const i = state.recurringPayments.findIndex(x => x.id === rec.id);
+      if (i >= 0) state.recurringPayments[i] = map.recurring.fromDb(row);
+    } else {
+      const row = await _insert('recurring_payments', map.recurring.toDb(rec));
+      state.recurringPayments.push(map.recurring.fromDb(row));
+    }
+    state.recurringPayments.sort((a, b) => a.dueDay - b.dueDay);
+  }
+  async function deleteRecurring(id) {
+    await _delete('recurring_payments', id);
+    state.recurringPayments = state.recurringPayments.filter(r => r.id !== id);
+    state.recurringPaymentLogs = state.recurringPaymentLogs.filter(l => l.recurringId !== id);
+  }
+  async function markRecurringPaid(recurringId, period, amountPaid) {
+    const row = {
+      recurring_id: recurringId,
+      period,
+      paid_at: new Date().toISOString(),
+      amount_paid: amountPaid != null ? amountPaid : null,
+      user_id: state.user.id,
+    };
+    const { data, error } = await sb.from('recurring_payment_logs')
+      .upsert(row, { onConflict: 'recurring_id,period' })
+      .select().single();
+    if (error) { toast('Erro: ' + error.message, 'error'); throw error; }
+    showSaving();
+    const log = map.recurringLog.fromDb(data);
+    const i = state.recurringPaymentLogs.findIndex(l => l.recurringId === recurringId && l.period === period);
+    if (i >= 0) state.recurringPaymentLogs[i] = log;
+    else state.recurringPaymentLogs.push(log);
+  }
+  async function markRecurringUnpaid(recurringId, period) {
+    const { error } = await sb.from('recurring_payment_logs')
+      .delete().eq('recurring_id', recurringId).eq('period', period);
+    if (error) { toast('Erro: ' + error.message, 'error'); throw error; }
+    showSaving();
+    state.recurringPaymentLogs = state.recurringPaymentLogs
+      .filter(l => !(l.recurringId === recurringId && l.period === period));
+  }
+
   // ===== PREFERENCES =====
   async function setPrefs(patch) {
     const dbPatch = {};
@@ -570,6 +645,38 @@ window.LifeStore = (function () {
       completed_at: t.completedAt || t.completed_at || null,
     })).filter(t => t.title));
 
+    // recurring_payments + map
+    const recurringIdMap = {};
+    const recInserted = await bulk('recurring_payments', (dump.recurringPayments || []).map(r => ({
+      user_id: uid,
+      name: r.name || 'Pagamento',
+      amount: Number(r.amount) || 0,
+      due_day: Math.max(1, Math.min(31, Number(r.dueDay) || 1)),
+      category: r.category || '',
+      notes: r.notes || null,
+      active: r.active !== false,
+    })));
+    (dump.recurringPayments || []).forEach((old, i) => {
+      if (recInserted[i]) recurringIdMap[old.id] = recInserted[i].id;
+    });
+
+    // recurring_payment_logs
+    const recLogRows = (dump.recurringPaymentLogs || [])
+      .map(l => ({
+        recurring_id: recurringIdMap[l.recurringId],
+        period: l.period,
+        paid_at: l.paidAt || new Date().toISOString(),
+        amount_paid: l.amountPaid != null ? Number(l.amountPaid) : null,
+        user_id: uid,
+      }))
+      .filter(l => l.recurring_id && l.period);
+    if (recLogRows.length) {
+      const { error } = await sb.from('recurring_payment_logs')
+        .upsert(recLogRows, { onConflict: 'recurring_id,period' });
+      if (error) { console.error('recurring_payment_logs', error); stats.errors += recLogRows.length; }
+      else stats.added += recLogRows.length;
+    }
+
     // daily_metrics (energy + focus)
     const metricsByDate = {};
     for (const [d, v] of Object.entries(dump.energy || {})) metricsByDate[d] = { energy: Number(v) };
@@ -608,6 +715,8 @@ window.LifeStore = (function () {
       energy: state.energy,
       focus: state.focus,
       todos: state.todos,
+      recurringPayments: state.recurringPayments,
+      recurringPaymentLogs: state.recurringPaymentLogs,
     };
   }
 
@@ -624,6 +733,7 @@ window.LifeStore = (function () {
     saveWorkout, deleteWorkout,
     saveTrip, deleteTrip,
     addTodo, updateTodo, toggleTodo, deferTodo, deleteTodo,
+    saveRecurring, deleteRecurring, markRecurringPaid, markRecurringUnpaid,
     setPrefs, setDailyMetric,
     importBackup, exportBackup,
   };

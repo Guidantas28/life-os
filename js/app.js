@@ -63,6 +63,7 @@ const titles = {
   dashboard: { bc: 'LIFE_OS / DASHBOARD', t: () => greeting() },
   tarefas:   { bc: 'LIFE_OS / TAREFAS', t: 'Tarefas do <em>dia</em>' },
   financas: { bc: 'LIFE_OS / FINANCAS / VISAO', t: 'Visão <em>financeira</em>' },
+  recorrentes: { bc: 'LIFE_OS / FINANCAS / RECORRENTES', t: 'Pagamentos <em>recorrentes</em>' },
   cartoes: { bc: 'LIFE_OS / FINANCAS / CARTOES', t: 'Cartões de <em>crédito</em>' },
   investimentos: { bc: 'LIFE_OS / FINANCAS / INVESTIMENTOS', t: 'Investimentos &amp; <em>patrimônio</em>' },
   metas: { bc: 'LIFE_OS / VIDA / METAS', t: 'Metas <em>anuais</em>' },
@@ -1082,6 +1083,251 @@ function computeTodoStreak() {
   return streak;
 }
 
+// ===== RECURRING PAYMENTS =====
+function currentPeriod() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+function periodLabel(period) {
+  const [y, m] = period.split('-');
+  const d = new Date(Number(y), Number(m) - 1, 1);
+  return d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+}
+
+function recStatusFor(rec, period = currentPeriod()) {
+  if (!rec.active) return 'inactive';
+  const log = state.recurringPaymentLogs.find(l => l.recurringId === rec.id && l.period === period);
+  if (log) return 'paid';
+  // determinar pendente vs atrasado vs futuro pelo dia atual
+  const today = new Date();
+  const todayDay = today.getDate();
+  const todayPeriod = currentPeriod();
+  if (period < todayPeriod) return 'overdue'; // mês passado, sem log
+  if (period > todayPeriod) return 'future';
+  // mesmo mês: depende do dia
+  if (todayDay > rec.dueDay) return 'overdue';
+  if (todayDay < rec.dueDay) return 'pending';
+  return 'pending'; // dia exato
+}
+
+const STATUS_LABELS = {
+  paid: 'pago',
+  overdue: 'atrasado',
+  pending: 'pendente',
+  future: 'agendado',
+  inactive: 'inativo',
+};
+const STATUS_ICONS = {
+  paid: '✓',
+  overdue: '!',
+  pending: '○',
+  future: '○',
+  inactive: '—',
+};
+
+window.openRecurringModal = (editId = null) => {
+  const r = editId ? state.recurringPayments.find(x => x.id === editId) : null;
+  UI.showModal(`
+    <h3>${r ? 'Editar' : 'Novo'} pagamento recorrente</h3>
+    <div class="modal-form-row full">
+      <div><label>Nome</label><input type="text" id="recName" placeholder="Ex: Aluguel, Netflix, Internet..." value="${escapeHtml(r?.name || '')}"></div>
+    </div>
+    <div class="modal-form-row">
+      <div><label>Valor (R$)</label><input type="number" inputmode="decimal" step="0.01" id="recAmount" value="${r?.amount ?? ''}" placeholder="0,00"></div>
+      <div><label>Dia do vencimento</label><input type="number" inputmode="numeric" min="1" max="31" id="recDueDay" value="${r?.dueDay || 1}"></div>
+    </div>
+    <div class="modal-form-row">
+      <div><label>Categoria</label><select id="recCategory">
+        ${['Moradia','Streaming','Internet','Telefone','Saúde','Educação','Transporte','Família','Outros'].map(c =>
+          `<option ${r?.category === c ? 'selected' : ''}>${c}</option>`
+        ).join('')}
+      </select></div>
+      <div><label>Status</label><select id="recActive">
+        <option value="true" ${r?.active !== false ? 'selected' : ''}>Ativo</option>
+        <option value="false" ${r?.active === false ? 'selected' : ''}>Inativo</option>
+      </select></div>
+    </div>
+    <div class="modal-form-row full">
+      <div><label>Observações (opcional)</label><textarea id="recNotes" rows="2" placeholder="Detalhes, conta de débito, contato...">${escapeHtml(r?.notes || '')}</textarea></div>
+    </div>
+    <div class="modal-actions">
+      ${r ? `<button class="btn btn-danger" onclick="deleteRecurringConfirm('${r.id}')">Excluir</button>` : ''}
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn" onclick="saveRecurringFromForm('${editId || ''}')">Salvar</button>
+    </div>
+  `);
+};
+
+window.saveRecurringFromForm = async (id) => {
+  const rec = {
+    id: id || undefined,
+    name: document.getElementById('recName').value.trim(),
+    amount: parseFloat(document.getElementById('recAmount').value) || 0,
+    dueDay: parseInt(document.getElementById('recDueDay').value) || 1,
+    category: document.getElementById('recCategory').value,
+    notes: document.getElementById('recNotes').value.trim(),
+    active: document.getElementById('recActive').value === 'true',
+  };
+  if (!rec.name) { UI.toast('Nome obrigatório', 'error'); return; }
+  try { await Store.saveRecurring(rec); UI.closeModal(); renderRecurring(); } catch {}
+};
+
+window.deleteRecurringConfirm = async (id) => {
+  if (!confirm('Excluir este pagamento recorrente? Os logs de pagamentos passados também serão removidos.')) return;
+  try { await Store.deleteRecurring(id); UI.closeModal(); renderRecurring(); } catch {}
+};
+
+window.markRecurringPaidNow = async (id) => {
+  const rec = state.recurringPayments.find(r => r.id === id);
+  if (!rec) return;
+  const period = currentPeriod();
+  try {
+    await Store.markRecurringPaid(id, period, rec.amount);
+    renderRecurring();
+  } catch {}
+};
+
+window.markRecurringUnpaidNow = async (id) => {
+  const period = currentPeriod();
+  try {
+    await Store.markRecurringUnpaid(id, period);
+    renderRecurring();
+  } catch {}
+};
+
+function renderRecurring() {
+  const period = currentPeriod();
+  document.getElementById('recPeriodLabel').textContent = periodLabel(period);
+
+  const active = state.recurringPayments.filter(r => r.active);
+  const inactive = state.recurringPayments.filter(r => !r.active);
+
+  // stats
+  const totalMonth = active.reduce((s, r) => s + Number(r.amount), 0);
+  const paidLogs = state.recurringPaymentLogs.filter(l => l.period === period);
+  const paidByRec = new Map(paidLogs.map(l => [l.recurringId, l]));
+  const paidMonth = active
+    .filter(r => paidByRec.has(r.id))
+    .reduce((s, r) => s + (paidByRec.get(r.id).amountPaid ?? Number(r.amount)), 0);
+  const pendingMonth = totalMonth - paidMonth;
+  const paidCount = active.filter(r => paidByRec.has(r.id)).length;
+  const pendingCount = active.length - paidCount;
+  const overdueCount = active.filter(r => recStatusFor(r) === 'overdue').length;
+
+  document.getElementById('recTotalMonth').textContent   = fmt(totalMonth);
+  document.getElementById('recPaidMonth').textContent    = fmt(paidMonth);
+  document.getElementById('recPendingMonth').textContent = fmt(Math.max(0, pendingMonth));
+  document.getElementById('recPaidCount').textContent    = `${paidCount} de ${active.length}`;
+  document.getElementById('recPendingCount').textContent = `${pendingCount} ${pendingCount === 1 ? 'pendente' : 'pendentes'}`;
+  document.getElementById('recListBadge').textContent    = `${active.length} ativos`;
+
+  const delta = document.getElementById('recPendingDelta');
+  if (active.length === 0) {
+    delta.textContent = '— sem pagamentos cadastrados';
+    delta.classList.remove('neg');
+  } else if (overdueCount > 0) {
+    delta.textContent = `↘ ${overdueCount} atrasado${overdueCount > 1 ? 's' : ''}`;
+    delta.classList.add('neg');
+  } else if (pendingCount === 0) {
+    delta.textContent = '✓ tudo pago este mês';
+    delta.classList.remove('neg');
+  } else {
+    delta.textContent = `↗ ${pendingCount} pendente${pendingCount > 1 ? 's' : ''} restante${pendingCount > 1 ? 's' : ''}`;
+    delta.classList.remove('neg');
+  }
+
+  // ordena: atrasados, depois pendentes (por due_day), depois pagos, depois agendados
+  const order = { overdue: 0, pending: 1, paid: 2, future: 3 };
+  const sortedActive = [...active].sort((a, b) => {
+    const sa = recStatusFor(a), sb = recStatusFor(b);
+    if (order[sa] !== order[sb]) return order[sa] - order[sb];
+    return a.dueDay - b.dueDay;
+  });
+
+  const list = document.getElementById('recList');
+  if (!sortedActive.length) {
+    list.innerHTML = '<div class="empty-state">Cadastre seu primeiro pagamento recorrente — vai aparecer todo mês automaticamente.</div>';
+  } else {
+    list.innerHTML = sortedActive.map(r => recRowHtml(r, period, paidByRec.get(r.id))).join('');
+  }
+
+  // inativos
+  const inactiveCard = document.getElementById('recInactiveCard');
+  if (inactive.length === 0) {
+    inactiveCard.hidden = true;
+  } else {
+    inactiveCard.hidden = false;
+    document.getElementById('recInactiveList').innerHTML = inactive.map(r => recRowHtml(r, period, paidByRec.get(r.id))).join('');
+  }
+
+  // Dashboard tile
+  renderRecurringDash(active, paidByRec, period);
+}
+
+function recRowHtml(r, period, log) {
+  const status = recStatusFor(r, period);
+  const statusLabel = STATUS_LABELS[status];
+  const icon = STATUS_ICONS[status];
+  const paidInfo = log
+    ? `<span class="rec-tag-status paid">pago em ${formatDate(log.paidAt.slice(0, 10))}</span>`
+    : `<span class="rec-tag-status ${status}">${statusLabel}${status === 'pending' || status === 'future' ? ` · vence dia ${r.dueDay}` : ''}</span>`;
+  const cat = r.category ? `<span class="tag">${escapeHtml(r.category)}</span>` : '';
+  const action = log
+    ? `<button class="rec-action paid" title="Desmarcar pago" onclick="event.stopPropagation(); markRecurringUnpaidNow('${r.id}')">✓</button>`
+    : `<button class="rec-action" title="Marcar como pago" onclick="event.stopPropagation(); markRecurringPaidNow('${r.id}')">$</button>`;
+
+  return `
+    <div class="rec-row ${r.active ? '' : 'inactive'}" onclick="openRecurringModal('${r.id}')">
+      <div class="rec-status ${status}">${icon}</div>
+      <div class="rec-body">
+        <div class="rec-name">${escapeHtml(r.name)}</div>
+        <div class="rec-meta">${cat}${paidInfo}</div>
+      </div>
+      <div class="rec-amount ${status === 'paid' ? 'paid' : status === 'overdue' ? 'overdue' : ''}">R$ ${fmt(log?.amountPaid ?? r.amount)}</div>
+      ${r.active ? action : '<div></div>'}
+    </div>`;
+}
+
+function renderRecurringDash(active, paidByRec, period) {
+  const dash = document.getElementById('dashRecurring');
+  const badge = document.getElementById('dashRecBadge');
+  if (!dash) return;
+  const pending = active.filter(r => !paidByRec.has(r.id));
+  badge.textContent = pending.length;
+
+  if (active.length === 0) {
+    dash.innerHTML = '<div class="empty-state">Nenhum pagamento recorrente cadastrado</div>';
+    return;
+  }
+  if (pending.length === 0) {
+    dash.innerHTML = '<div class="empty-state" style="color: var(--emerald);">✓ Todos os pagamentos do mês foram quitados</div>';
+    return;
+  }
+  // Top 5 pendentes (atrasados primeiro)
+  const top = [...pending].sort((a, b) => {
+    const sa = recStatusFor(a, period), sb = recStatusFor(b, period);
+    const order = { overdue: 0, pending: 1, future: 2 };
+    if (order[sa] !== order[sb]) return order[sa] - order[sb];
+    return a.dueDay - b.dueDay;
+  }).slice(0, 5);
+
+  dash.innerHTML = top.map(r => {
+    const status = recStatusFor(r, period);
+    return `
+      <div class="rec-row" onclick="navigateTo('recorrentes')" style="border-bottom: 1px solid var(--line); padding: 10px 0;">
+        <div class="rec-status ${status}">${STATUS_ICONS[status]}</div>
+        <div class="rec-body">
+          <div class="rec-name" style="font-size: 13px;">${escapeHtml(r.name)}</div>
+          <div class="rec-meta">
+            <span class="rec-tag-status ${status}">${STATUS_LABELS[status]} · dia ${r.dueDay}</span>
+          </div>
+        </div>
+        <div class="rec-amount ${status === 'overdue' ? 'overdue' : ''}">R$ ${fmt(r.amount)}</div>
+        <div></div>
+      </div>`;
+  }).join('');
+}
+
 // ===== MODAL backdrop =====
 function setupModalBackdrop() {
   document.getElementById('modalBackdrop').addEventListener('click', e => {
@@ -1181,6 +1427,7 @@ function renderAll() {
   renderWorkouts();
   renderTrips();
   renderTodos();
+  renderRecurring();
   renderSettings();
   document.getElementById('pageTitle').innerHTML = (() => {
     const active = document.querySelector('.page.active');
@@ -1204,6 +1451,7 @@ function bindStaticButtons() {
   document.getElementById('btnLogStudy').addEventListener('click', logStudySessionFromForm);
   document.getElementById('btnNewWorkout').addEventListener('click', () => window.openWorkoutModal());
   document.getElementById('btnNewTrip').addEventListener('click', () => window.openTripModal());
+  document.getElementById('btnNewRecurring').addEventListener('click', () => window.openRecurringModal());
 
   document.getElementById('btnAddTodo').addEventListener('click', quickAddTodo);
   const todoInput = document.getElementById('todoQuickInput');

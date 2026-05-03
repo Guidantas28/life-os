@@ -79,6 +79,7 @@
     <div class="nav-section">
       <div class="nav-label">Finanças</div>
       <div class="nav-item" data-page="financas"><span class="nav-icon">$</span><span>Visão Financeira</span></div>
+      <div class="nav-item" data-page="recorrentes"><span class="nav-icon">↻</span><span>Recorrentes</span></div>
       <div class="nav-item" data-page="cartoes"><span class="nav-icon">▤</span><span>Cartões</span></div>
       <div class="nav-item" data-page="investimentos"><span class="nav-icon">↗</span><span>Investimentos</span></div>
     </div>
@@ -200,7 +201,14 @@
         </div>
       </div>
 
-      <div class="card" style="margin-top: 16px;">
+      <div class="card mt-16">
+        <div class="card-title">Pagamentos Recorrentes deste mês <span class="badge" id="dashRecBadge">0</span></div>
+        <div id="dashRecurring">
+          <div class="empty-state">Nenhum pagamento recorrente cadastrado</div>
+        </div>
+      </div>
+
+      <div class="card mt-16">
         <div class="card-title">Próximas Viagens / Compras Planejadas</div>
         <div id="dashTrips">
           <div class="empty-state">Nenhum plano cadastrado</div>
@@ -327,6 +335,43 @@
           <span class="meta-mono" id="txCount">0 lançamentos</span>
         </div>
         <div id="txList"><div class="empty-state">Sem transações ainda. Lance a primeira acima.</div></div>
+      </div>
+    </section>
+
+    <!-- ============= PAGAMENTOS RECORRENTES ============= -->
+    <section class="page" id="page-recorrentes">
+      <div class="section-header">
+        <h2>Pagamentos <em>recorrentes</em></h2>
+        <button class="btn" id="btnNewRecurring">+ Novo Pagamento</button>
+      </div>
+
+      <div class="dash-grid-3">
+        <div class="hero-stat">
+          <div class="label">Total Mensal</div>
+          <div class="value"><span class="currency">R$</span><span id="recTotalMonth">0</span></div>
+          <div class="delta" id="recPendingDelta">— sem pagamentos</div>
+        </div>
+        <div class="card stat-mini">
+          <div class="card-title">Já Pago</div>
+          <div><div class="value emerald">R$ <span id="recPaidMonth">0</span></div><div class="sub" id="recPaidCount">0 de 0</div></div>
+        </div>
+        <div class="card stat-mini">
+          <div class="card-title">A Pagar</div>
+          <div><div class="value crimson">R$ <span id="recPendingMonth">0</span></div><div class="sub" id="recPendingCount">0 pendentes</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span><span id="recPeriodLabel">Mês atual</span> — <span id="recListBadge">0 ativos</span></span>
+          <span class="meta-mono">↻ rolagem mensal automática</span>
+        </div>
+        <div id="recList"><div class="empty-state">Cadastre seu primeiro pagamento recorrente — vai aparecer todo mês automaticamente.</div></div>
+      </div>
+
+      <div class="card mt-16" id="recInactiveCard" hidden>
+        <div class="card-title">Inativos</div>
+        <div id="recInactiveList"></div>
       </div>
     </section>
 
@@ -605,6 +650,7 @@
       <button class="sheet-link" data-page="dashboard"><span class="bn-icon">◉</span> Dashboard</button>
       <button class="sheet-link" data-page="tarefas"><span class="bn-icon">☐</span> Tarefas do dia</button>
       <button class="sheet-link" data-page="financas"><span class="bn-icon">$</span> Finanças</button>
+      <button class="sheet-link" data-page="recorrentes"><span class="bn-icon">↻</span> Recorrentes</button>
       <button class="sheet-link" data-page="cartoes"><span class="bn-icon">▤</span> Cartões</button>
       <button class="sheet-link" data-page="investimentos"><span class="bn-icon">↗</span> Investimentos</button>
       <button class="sheet-link" data-page="metas"><span class="bn-icon">◎</span> Metas</button>

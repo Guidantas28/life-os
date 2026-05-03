@@ -902,6 +902,91 @@ label {
 .todo-action:active { transform: scale(0.92); }
 
 .value.emerald { color: var(--emerald); }
+.value.crimson { color: var(--crimson); }
+
+/* ============================================================
+   RECURRING PAYMENTS
+============================================================ */
+.rec-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+.rec-row:last-child { border-bottom: none; }
+.rec-row.inactive { opacity: 0.5; }
+
+.rec-status {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.rec-status.paid     { background: rgba(107,157,125,0.15); color: var(--emerald); border: 1px solid var(--emerald); }
+.rec-status.overdue  { background: rgba(194,84,80,0.15);  color: var(--crimson); border: 1px solid var(--crimson); }
+.rec-status.pending  { background: var(--bg-hover); color: var(--gold); border: 1px solid var(--gold); }
+.rec-status.future   { background: var(--bg-hover); color: var(--ink-faint); border: 1px solid var(--line); }
+.rec-status.inactive { background: var(--bg-hover); color: var(--ink-faint); border: 1px dashed var(--line); }
+
+.rec-body { min-width: 0; }
+.rec-name {
+  font-size: 14px; font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rec-meta {
+  font-size: 11px;
+  color: var(--ink-dim);
+  margin-top: 4px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+
+.rec-amount {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-align: right;
+}
+.rec-amount.paid    { color: var(--emerald); }
+.rec-amount.overdue { color: var(--crimson); }
+
+.rec-action {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-faint);
+  width: 36px; height: 36px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.rec-action:hover { border-color: var(--gold); color: var(--gold); }
+.rec-action:active { transform: scale(0.92); }
+.rec-action.paid {
+  background: var(--emerald);
+  border-color: var(--emerald);
+  color: var(--bg);
+}
+
+.rec-tag-status {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.rec-tag-status.paid    { background: rgba(107,157,125,0.15); color: var(--emerald); }
+.rec-tag-status.overdue { background: rgba(194,84,80,0.15);  color: var(--crimson); }
+.rec-tag-status.pending { background: rgba(212,168,87,0.15); color: var(--gold-bright); }
+.rec-tag-status.future  { background: var(--bg-hover); color: var(--ink-faint); }
 
 /* ============================================================
    BOTTOM NAV (mobile only)
