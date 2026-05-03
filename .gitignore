@@ -1,0 +1,32 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+
+# Node (caso adicione tooling depois)
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Env e segredos locais
+.env
+.env.local
+.env.*.local
+
+# Vercel
+.vercel/
+
+# Backups locais de dados
+*-backup.json
+lifeos-backup*.json
+
+# Build temporário
+dist/
+build/

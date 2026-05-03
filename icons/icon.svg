@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="g" cx="30%" cy="30%" r="80%">
+      <stop offset="0%" stop-color="#1f1d18"/>
+      <stop offset="100%" stop-color="#0a0a08"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#g)"/>
+  <rect x="18" y="18" width="476" height="476" rx="86" fill="none" stroke="#2a2a26" stroke-width="2"/>
+  <text x="256" y="328" text-anchor="middle"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-size="320" font-weight="900" font-style="italic"
+        fill="#d4a857">L</text>
+  <text x="256" y="408" text-anchor="middle"
+        font-family="Menlo, 'Courier New', monospace"
+        font-size="34" letter-spacing="14" fill="#6b6760">/ OS</text>
+</svg>

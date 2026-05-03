@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1">
+  <meta name="theme-color" content="#0a0a08">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Life OS">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/icon.svg">
+  <title>Life OS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400&family=JetBrains+Mono:wght@300;400;500;700&family=Inter+Tight:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+
+<!-- ============================================================
+     LOGIN SCREEN
+============================================================ -->
+<div id="loginScreen" class="login-screen" hidden>
+  <div class="login-card">
+    <div class="brand">
+      <span class="lifelogo">Life</span>
+      <span class="os">/ OS</span>
+    </div>
+    <p class="tagline">Sistema operacional pessoal</p>
+
+    <form id="loginForm" class="login-form">
+      <label>Seu email</label>
+      <input type="email" id="loginEmail" placeholder="voce@exemplo.com" autocomplete="email" required>
+      <button class="btn" type="submit" id="loginBtn">Receber link mágico</button>
+      <div id="loginMsg" class="login-msg"></div>
+    </form>
+
+    <p class="login-foot">
+      Sem senha. Te mandamos um link no email — clica e tá dentro.
+    </p>
+  </div>
+</div>
+
+<!-- ============================================================
+     SPLASH (loading inicial)
+============================================================ -->
+<div id="splash" class="splash">
+  <div class="splash-brand">
+    <span class="lifelogo">Life</span>
+    <span class="os">/ OS</span>
+  </div>
+  <div class="splash-dot"></div>
+</div>
+
+<!-- ============================================================
+     APP
+============================================================ -->
+<div class="app" id="app" hidden>
+
+  <!-- SIDEBAR (desktop) -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="lifelogo">Life</span>
+      <span class="os">/ OS</span>
+    </div>
+    <div class="tagline">Sistema operacional pessoal</div>
+
+    <div class="nav-section">
+      <div class="nav-label">Visão Geral</div>
+      <div class="nav-item active" data-page="dashboard">
+        <span class="nav-icon">◉</span><span>Dashboard</span>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Finanças</div>
+      <div class="nav-item" data-page="financas"><span class="nav-icon">$</span><span>Visão Financeira</span></div>
+      <div class="nav-item" data-page="cartoes"><span class="nav-icon">▤</span><span>Cartões</span></div>
+      <div class="nav-item" data-page="investimentos"><span class="nav-icon">↗</span><span>Investimentos</span></div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Vida</div>
+      <div class="nav-item" data-page="metas"><span class="nav-icon">◎</span><span>Metas Anuais</span></div>
+      <div class="nav-item" data-page="rotina"><span class="nav-icon">⌘</span><span>Rotina &amp; Hábitos</span></div>
+      <div class="nav-item" data-page="familia"><span class="nav-icon">♥</span><span>Família</span></div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Crescimento</div>
+      <div class="nav-item" data-page="estudos"><span class="nav-icon">✦</span><span>Estudos</span></div>
+      <div class="nav-item" data-page="esporte"><span class="nav-icon">▲</span><span>Esporte</span></div>
+      <div class="nav-item" data-page="viagens"><span class="nav-icon">✈</span><span>Viagens &amp; Compras</span></div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Conta</div>
+      <div class="nav-item" data-page="settings"><span class="nav-icon">⚙</span><span>Configurações</span></div>
+    </div>
+
+    <div class="sidebar-footer">
+      SUPABASE · SYNCED<br>
+      <span id="lastSync">—</span><br>
+      <span id="userBadge" style="color: var(--gold);"></span>
+    </div>
+  </aside>
+
+  <!-- MOBILE TOP BAR -->
+  <header class="mobile-top">
+    <div class="brand">
+      <span class="lifelogo">Life</span>
+      <span class="os">/ OS</span>
+    </div>
+    <button class="icon-btn" id="mobileMenuBtn" aria-label="Menu">⋯</button>
+  </header>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="breadcrumb" id="breadcrumb">LIFE_OS / DASHBOARD</div>
+        <h1 class="page-title" id="pageTitle">Bom dia, <em>controle.</em></h1>
+      </div>
+      <div class="topbar-meta" id="topbarMeta"></div>
+    </div>
+
+    <!-- ============= DASHBOARD ============= -->
+    <section class="page active" id="page-dashboard">
+      <div class="quote-block" id="dailyQuote">
+        "Você não vai elevar-se ao nível das suas metas. Você vai cair ao nível dos seus sistemas."
+        <span class="author">— James Clear</span>
+      </div>
+
+      <div class="dash-grid">
+        <div class="hero-stat">
+          <div class="label">Patrimônio Líquido</div>
+          <div class="value"><span class="currency">R$</span><span id="heroNetWorth">0</span></div>
+          <div class="delta" id="heroDelta">— defina suas finanças para começar</div>
+        </div>
+        <div class="card stat-mini">
+          <div class="card-title">Saldo do Mês</div>
+          <div>
+            <div class="value">R$ <span id="monthBalance">0</span></div>
+            <div class="sub" id="monthBalanceSub">Receitas − Despesas</div>
+          </div>
+        </div>
+        <div class="card stat-mini">
+          <div class="card-title">Limite Disponível</div>
+          <div>
+            <div class="value">R$ <span id="totalAvailable">0</span></div>
+            <div class="sub" id="totalAvailableSub">de R$ 0 totais</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dash-grid-2">
+        <div class="card">
+          <div class="card-title">Metas do Ano <span class="badge" id="goalsBadge">0</span></div>
+          <div id="dashGoalsList">
+            <div class="empty-state">Nenhuma meta cadastrada — vá em <strong>Metas Anuais</strong></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Hábitos da Semana</div>
+          <div class="ring-container">
+            <svg class="ring" viewBox="0 0 100 100">
+              <circle class="ring-track" cx="50" cy="50" r="42"></circle>
+              <circle class="ring-fill" id="habitRing" cx="50" cy="50" r="42" stroke-dasharray="0 264"></circle>
+              <text class="ring-text" x="50" y="56" id="habitRingText">0%</text>
+            </svg>
+            <div>
+              <div style="font-size: 13px; color: var(--ink-dim); margin-bottom: 6px;">Consistência semanal</div>
+              <div style="font-family: 'Fraunces', serif; font-size: 22px; line-height: 1.2;" id="habitSummary">— sem hábitos</div>
+              <div style="font-size: 11px; color: var(--ink-faint); margin-top: 6px;">Defina hábitos em Rotina</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dash-grid-3">
+        <div class="card">
+          <div class="card-title">Tempo com Família</div>
+          <div style="font-family: 'Fraunces', serif; font-size: 28px;" id="familyTime">0h</div>
+          <div style="font-size: 11px; color: var(--ink-dim); margin-top: 4px;">esta semana</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Estudos</div>
+          <div style="font-family: 'Fraunces', serif; font-size: 28px;" id="studyTime">0h</div>
+          <div style="font-size: 11px; color: var(--ink-dim); margin-top: 4px;">esta semana</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Treinos</div>
+          <div style="font-family: 'Fraunces', serif; font-size: 28px;" id="workoutCount">0</div>
+          <div style="font-size: 11px; color: var(--ink-dim); margin-top: 4px;">esta semana</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 16px;">
+        <div class="card-title">Próximas Viagens / Compras Planejadas</div>
+        <div id="dashTrips">
+          <div class="empty-state">Nenhum plano cadastrado</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============= FINANÇAS ============= -->
+    <section class="page" id="page-financas">
+      <div class="dash-grid-3">
+        <div class="hero-stat">
+          <div class="label">Receita do Mês</div>
+          <div class="value" style="color: var(--emerald);"><span class="currency">R$</span><span id="finIncome">0</span></div>
+        </div>
+        <div class="hero-stat">
+          <div class="label">Despesas do Mês</div>
+          <div class="value" style="color: var(--crimson);"><span class="currency">R$</span><span id="finExpense">0</span></div>
+        </div>
+        <div class="hero-stat">
+          <div class="label">Reserva</div>
+          <div class="value"><span class="currency">R$</span><span id="finReserve">0</span></div>
+        </div>
+      </div>
+
+      <div class="dash-grid-2">
+        <div class="card">
+          <div class="section-header"><h2>Lançar <em>transação</em></h2></div>
+          <div class="modal-form-row">
+            <div>
+              <label>Tipo</label>
+              <select id="txType">
+                <option value="income">Receita</option>
+                <option value="expense">Despesa</option>
+              </select>
+            </div>
+            <div>
+              <label>Valor (R$)</label>
+              <input type="number" step="0.01" inputmode="decimal" id="txAmount" placeholder="0,00">
+            </div>
+          </div>
+          <div class="modal-form-row full">
+            <div>
+              <label>Descrição</label>
+              <input type="text" id="txDesc" placeholder="Ex: Salário, Mercado, Cinema...">
+            </div>
+          </div>
+          <div class="modal-form-row">
+            <div>
+              <label>Categoria</label>
+              <select id="txCategory">
+                <option>Salário</option><option>Freelance</option><option>Investimento</option>
+                <option>Alimentação</option><option>Moradia</option><option>Transporte</option>
+                <option>Lazer</option><option>Saúde</option><option>Educação</option>
+                <option>Família</option><option>Outros</option>
+              </select>
+            </div>
+            <div>
+              <label>Data</label>
+              <input type="date" id="txDate">
+            </div>
+          </div>
+          <button class="btn full-w" id="btnAddTransaction">+ Lançar</button>
+        </div>
+
+        <div class="card">
+          <div class="section-header"><h2>Reserva de <em>emergência</em></h2></div>
+          <label>Saldo atual da reserva (R$)</label>
+          <input type="number" step="0.01" inputmode="decimal" id="reserveInput" placeholder="0,00">
+          <div style="margin-top: 12px;">
+            <label>Meta de reserva (R$)</label>
+            <input type="number" step="0.01" inputmode="decimal" id="reserveGoal" placeholder="Ex: 6 meses de despesa">
+          </div>
+          <button class="btn btn-ghost full-w mt-14" id="btnSaveReserve">Salvar Reserva</button>
+          <div class="pbar mt-16"><div class="pbar-fill emerald" id="reserveBar" style="width: 0%"></div></div>
+          <div class="muted-center" id="reserveStatus">—</div>
+        </div>
+      </div>
+
+      <div class="card mt-16">
+        <div class="section-header">
+          <h2>Histórico de <em>transações</em></h2>
+          <span class="meta-mono" id="txCount">0 lançamentos</span>
+        </div>
+        <div id="txList"><div class="empty-state">Sem transações ainda. Lance a primeira acima.</div></div>
+      </div>
+    </section>
+
+    <!-- ============= CARTÕES ============= -->
+    <section class="page" id="page-cartoes">
+      <div class="section-header">
+        <h2>Seus <em>cartões</em></h2>
+        <button class="btn" id="btnNewCard">+ Adicionar Cartão</button>
+      </div>
+
+      <div class="dash-grid-3" id="cardsGrid">
+        <div class="empty-state full-row">Nenhum cartão cadastrado ainda.</div>
+      </div>
+
+      <div class="card mt-24">
+        <div class="card-title">Total de limite</div>
+        <div class="dash-grid-3">
+          <div>
+            <div class="meta-mono">UTILIZADO</div>
+            <div class="big-num crimson">R$ <span id="ccTotalUsed">0</span></div>
+          </div>
+          <div>
+            <div class="meta-mono">DISPONÍVEL</div>
+            <div class="big-num emerald">R$ <span id="ccTotalAvail">0</span></div>
+          </div>
+          <div>
+            <div class="meta-mono">LIMITE TOTAL</div>
+            <div class="big-num">R$ <span id="ccTotalLimit">0</span></div>
+          </div>
+        </div>
+        <div class="pbar pbar-tall mt-16"><div class="pbar-fill crimson" id="ccTotalBar" style="width: 0%"></div></div>
+        <div class="muted-center" id="ccTotalPct">0% de utilização</div>
+      </div>
+    </section>
+
+    <!-- ============= INVESTIMENTOS ============= -->
+    <section class="page" id="page-investimentos">
+      <div class="section-header">
+        <h2>Carteira de <em>investimentos</em></h2>
+        <button class="btn" id="btnNewInvest">+ Adicionar Posição</button>
+      </div>
+
+      <div class="dash-grid-3">
+        <div class="hero-stat">
+          <div class="label">Total Investido</div>
+          <div class="value"><span class="currency">R$</span><span id="invTotal">0</span></div>
+        </div>
+        <div class="card stat-mini">
+          <div class="card-title">Renda Fixa</div>
+          <div><div class="value">R$ <span id="invFixed">0</span></div></div>
+        </div>
+        <div class="card stat-mini">
+          <div class="card-title">Renda Variável</div>
+          <div><div class="value">R$ <span id="invVariable">0</span></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Posições</div>
+        <div id="invList"><div class="empty-state">Nenhum investimento cadastrado.</div></div>
+      </div>
+    </section>
+
+    <!-- ============= METAS ============= -->
+    <section class="page" id="page-metas">
+      <div class="section-header">
+        <h2>Metas do <em>ano</em></h2>
+        <button class="btn" id="btnNewGoal">+ Nova Meta</button>
+      </div>
+
+      <div class="tabs scroll-x">
+        <div class="tab active" data-tab="all">TODAS</div>
+        <div class="tab" data-tab="financeira">FINANCEIRAS</div>
+        <div class="tab" data-tab="profissional">PROFISSIONAIS</div>
+        <div class="tab" data-tab="pessoal">PESSOAIS</div>
+        <div class="tab" data-tab="compra">COMPRAS</div>
+      </div>
+
+      <div class="card">
+        <div id="goalsList"><div class="empty-state">Nenhuma meta ainda. Crie a primeira para começar.</div></div>
+      </div>
+    </section>
+
+    <!-- ============= ROTINA ============= -->
+    <section class="page" id="page-rotina">
+      <div class="section-header">
+        <h2>Hábitos &amp; <em>rotina</em></h2>
+        <button class="btn" id="btnNewHabit">+ Novo Hábito</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Tracker semanal — toque para marcar</div>
+        <div class="habit-row habit-header">
+          <div></div>
+          <div class="hd">SEG</div><div class="hd">TER</div><div class="hd">QUA</div>
+          <div class="hd">QUI</div><div class="hd">SEX</div><div class="hd">SÁB</div><div class="hd">DOM</div>
+          <div class="hd hd-right">STREAK</div>
+        </div>
+        <div id="habitsList"></div>
+      </div>
+
+      <div class="dash-grid-2 mt-16">
+        <div class="card">
+          <div class="card-title">Energia hoje</div>
+          <div class="dots-row" id="energyDots">
+            <div class="dot" data-val="1"></div><div class="dot" data-val="2"></div>
+            <div class="dot" data-val="3"></div><div class="dot" data-val="4"></div>
+            <div class="dot" data-val="5"></div>
+          </div>
+          <div class="muted" id="energyLabel">—</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Foco hoje</div>
+          <div class="dots-row" id="focusDots">
+            <div class="dot" data-val="1"></div><div class="dot" data-val="2"></div>
+            <div class="dot" data-val="3"></div><div class="dot" data-val="4"></div>
+            <div class="dot" data-val="5"></div>
+          </div>
+          <div class="muted" id="focusLabel">—</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============= FAMÍLIA ============= -->
+    <section class="page" id="page-familia">
+      <div class="dash-grid-2">
+        <div class="card">
+          <div class="section-header"><h2>Tempo de <em>qualidade</em></h2></div>
+          <p class="muted-13 mb-16">Registre momentos significativos com a família. O que importa é a presença, não o tempo cronológico.</p>
+          <div class="modal-form-row">
+            <div><label>Data</label><input type="date" id="famDate"></div>
+            <div><label>Duração (h)</label><input type="number" step="0.5" inputmode="decimal" id="famHours" placeholder="2"></div>
+          </div>
+          <div class="modal-form-row full">
+            <div><label>O que vocês fizeram</label><input type="text" id="famActivity" placeholder="Ex: Jantar fora, parque, jogo de tabuleiro..."></div>
+          </div>
+          <button class="btn full-w" id="btnAddFamily">+ Registrar momento</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Esta semana</div>
+          <div class="huge-stat"><span id="famWeekTotal">0</span><span class="huge-stat-suffix">h</span></div>
+          <div class="muted-12 mt-8" id="famWeekCount">0 momentos registrados</div>
+          <div class="divider-block">
+            <div class="card-title">Meta semanal (h)</div>
+            <input type="number" step="0.5" inputmode="decimal" id="famGoalInput" placeholder="Ex: 15">
+            <div class="pbar mt-12"><div class="pbar-fill emerald" id="famGoalBar" style="width: 0%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-16">
+        <div class="section-header"><h2>Histórico</h2></div>
+        <div id="famList"><div class="empty-state">Nenhum momento registrado ainda.</div></div>
+      </div>
+    </section>
+
+    <!-- ============= ESTUDOS ============= -->
+    <section class="page" id="page-estudos">
+      <div class="section-header">
+        <h2>Plano de <em>estudos</em></h2>
+        <button class="btn" id="btnNewStudy">+ Novo Curso/Livro</button>
+      </div>
+
+      <div class="dash-grid-3">
+        <div class="card stat-mini"><div class="card-title">Em andamento</div><div><div class="value" id="studyActive">0</div></div></div>
+        <div class="card stat-mini"><div class="card-title">Concluídos</div><div><div class="value" id="studyDone">0</div></div></div>
+        <div class="card stat-mini"><div class="card-title">Horas/semana</div><div><div class="value"><span id="studyWeekHours">0</span>h</div></div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Sessão de estudo rápida</div>
+        <div class="modal-form-row">
+          <div><label>Curso/Livro</label><select id="studySession"></select></div>
+          <div><label>Duração (h)</label><input type="number" step="0.5" inputmode="decimal" id="studySessionHours" placeholder="1"></div>
+        </div>
+        <button class="btn btn-ghost full-w" id="btnLogStudy">+ Registrar sessão</button>
+      </div>
+
+      <div class="card mt-16">
+        <div class="card-title">Sua biblioteca</div>
+        <div id="studyList"><div class="empty-state">Adicione cursos e livros que está estudando.</div></div>
+      </div>
+    </section>
+
+    <!-- ============= ESPORTE ============= -->
+    <section class="page" id="page-esporte">
+      <div class="section-header">
+        <h2>Treinos &amp; <em>saúde</em></h2>
+        <button class="btn" id="btnNewWorkout">+ Registrar Treino</button>
+      </div>
+
+      <div class="dash-grid-4">
+        <div class="card stat-mini"><div class="card-title">Treinos no mês</div><div><div class="value" id="wkMonth">0</div></div></div>
+        <div class="card stat-mini"><div class="card-title">Esta semana</div><div><div class="value" id="wkWeek">0</div></div></div>
+        <div class="card stat-mini"><div class="card-title">Streak atual</div><div><div class="value" id="wkStreak">0</div><div class="sub">dias seguidos</div></div></div>
+        <div class="card stat-mini">
+          <div class="card-title">Meta semanal</div>
+          <div>
+            <input type="number" inputmode="numeric" id="wkGoal" placeholder="4" class="goal-input-inline">
+            <div class="sub">treinos/semana</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Histórico</div>
+        <div id="workoutList"><div class="empty-state">Nenhum treino registrado.</div></div>
+      </div>
+    </section>
+
+    <!-- ============= VIAGENS ============= -->
+    <section class="page" id="page-viagens">
+      <div class="section-header">
+        <h2>Viagens &amp; <em>compras</em> planejadas</h2>
+        <button class="btn" id="btnNewTrip">+ Novo Plano</button>
+      </div>
+
+      <div class="card">
+        <div id="tripsList"><div class="empty-state">Nenhuma viagem ou compra planejada ainda.</div></div>
+      </div>
+    </section>
+
+    <!-- ============= SETTINGS ============= -->
+    <section class="page" id="page-settings">
+      <div class="dash-grid-2">
+        <div class="card">
+          <div class="card-title">Conta</div>
+          <p class="muted-13"><strong id="settingsEmail">—</strong></p>
+          <p class="muted-12 mt-8">Conectado ao Supabase. Tudo é sincronizado em tempo real entre seus dispositivos.</p>
+          <button class="btn btn-ghost full-w mt-14" id="btnSignOut">Sair</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Backup</div>
+          <button class="btn btn-ghost full-w" id="btnExport">↓ Baixar backup JSON</button>
+          <p class="muted-12 mt-12">Para restaurar ou migrar do Artifacts:</p>
+          <input type="file" id="importFile" accept="application/json" hidden>
+          <button class="btn full-w mt-8" id="btnImport">↑ Importar backup JSON</button>
+          <div id="importStatus" class="muted-12 mt-8"></div>
+        </div>
+      </div>
+
+      <div class="card mt-16">
+        <div class="card-title">Zona de perigo</div>
+        <p class="muted-12 mb-16">Apaga TODOS seus dados deste app no Supabase. Não pode ser desfeito.</p>
+        <button class="btn btn-danger" id="btnResetAll">↻ Resetar todos os dados</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BOTTOM NAV (mobile) -->
+  <nav class="bottom-nav">
+    <button class="bn-item active" data-page="dashboard"><span class="bn-icon">◉</span><span>Hoje</span></button>
+    <button class="bn-item" data-page="financas"><span class="bn-icon">$</span><span>Finanças</span></button>
+    <button class="bn-item" data-page="rotina"><span class="bn-icon">⌘</span><span>Rotina</span></button>
+    <button class="bn-item" data-page="metas"><span class="bn-icon">◎</span><span>Metas</span></button>
+    <button class="bn-item" id="bnMoreBtn"><span class="bn-icon">⋯</span><span>Mais</span></button>
+  </nav>
+</div>
+
+<!-- ============================================================
+     MODALS / SHEETS
+============================================================ -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<!-- "Mais" sheet (mobile) -->
+<div class="sheet-backdrop" id="moreSheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Navegar</div>
+    <div class="sheet-grid">
+      <button class="sheet-link" data-page="dashboard"><span class="bn-icon">◉</span> Dashboard</button>
+      <button class="sheet-link" data-page="financas"><span class="bn-icon">$</span> Finanças</button>
+      <button class="sheet-link" data-page="cartoes"><span class="bn-icon">▤</span> Cartões</button>
+      <button class="sheet-link" data-page="investimentos"><span class="bn-icon">↗</span> Investimentos</button>
+      <button class="sheet-link" data-page="metas"><span class="bn-icon">◎</span> Metas</button>
+      <button class="sheet-link" data-page="rotina"><span class="bn-icon">⌘</span> Rotina</button>
+      <button class="sheet-link" data-page="familia"><span class="bn-icon">♥</span> Família</button>
+      <button class="sheet-link" data-page="estudos"><span class="bn-icon">✦</span> Estudos</button>
+      <button class="sheet-link" data-page="esporte"><span class="bn-icon">▲</span> Esporte</button>
+      <button class="sheet-link" data-page="viagens"><span class="bn-icon">✈</span> Viagens</button>
+      <button class="sheet-link" data-page="settings"><span class="bn-icon">⚙</span> Configurações</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toasts -->
+<div id="toastContainer" class="toast-container"></div>
+<div id="savingIndicator" class="saving-indicator">✓ Sincronizado</div>
+<div id="offlineBanner" class="offline-banner" hidden>Offline — alterações vão falhar até voltar a conexão</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./js/config.js"></script>
+<script src="./js/supabase.js"></script>
+<script src="./js/auth.js"></script>
+<script src="./js/store.js"></script>
+<script src="./js/app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+  }
+</script>
+</body>
+</html>

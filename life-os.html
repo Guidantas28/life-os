@@ -1,0 +1,2413 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LIFE OS — Sistema de Controle Pessoal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400&family=JetBrains+Mono:wght@300;400;500;700&family=Inter+Tight:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a08;
+    --bg-elev: #131311;
+    --bg-card: #1a1a17;
+    --bg-hover: #222220;
+    --ink: #f5f1e8;
+    --ink-dim: #a8a39a;
+    --ink-faint: #6b6760;
+    --line: #2a2a26;
+    --line-strong: #3d3d36;
+    --gold: #d4a857;
+    --gold-bright: #e8c275;
+    --emerald: #6b9d7d;
+    --crimson: #c25450;
+    --azure: #5a8db5;
+    --plum: #8a6b8e;
+    --sand: #c9b896;
+    --shadow-soft: 0 1px 0 rgba(255,255,255,0.04), 0 8px 24px rgba(0,0,0,0.4);
+    --shadow-deep: 0 1px 0 rgba(255,255,255,0.05), 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(ellipse at top left, rgba(212, 168, 87, 0.06), transparent 60%),
+      radial-gradient(ellipse at bottom right, rgba(107, 157, 125, 0.04), transparent 60%);
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+    opacity: 0.03;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .app {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: 100vh;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    background: var(--bg-elev);
+    border-right: 1px solid var(--line);
+    padding: 28px 20px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .brand {
+    display: flex; align-items: baseline; gap: 6px;
+    margin-bottom: 4px;
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+  }
+  .brand .lifelogo {
+    font-size: 28px;
+    color: var(--ink);
+    font-style: italic;
+  }
+  .brand .os {
+    font-size: 14px;
+    color: var(--gold);
+    letter-spacing: 0.3em;
+    font-weight: 500;
+    font-style: normal;
+    text-transform: uppercase;
+  }
+  .tagline {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-faint);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 36px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 18px;
+  }
+
+  .nav-section {
+    margin-bottom: 28px;
+  }
+  .nav-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-faint);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 0 8px;
+    margin-bottom: 10px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--ink-dim);
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    margin-bottom: 1px;
+    border-left: 2px solid transparent;
+  }
+  .nav-item:hover {
+    background: var(--bg-hover);
+    color: var(--ink);
+  }
+  .nav-item.active {
+    background: var(--bg-hover);
+    color: var(--gold-bright);
+    border-left-color: var(--gold);
+  }
+  .nav-icon {
+    width: 16px; height: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-faint);
+    line-height: 1.7;
+  }
+
+  /* MAIN */
+  .main {
+    padding: 32px 48px 80px;
+    max-width: 1400px;
+  }
+
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 36px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+  }
+  .breadcrumb {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-faint);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .page-title {
+    font-family: 'Fraunces', serif;
+    font-size: 42px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .page-title em {
+    font-style: italic;
+    color: var(--gold);
+    font-weight: 300;
+  }
+  .topbar-meta {
+    text-align: right;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-dim);
+    line-height: 1.8;
+  }
+  .topbar-meta strong { color: var(--gold-bright); font-weight: 500; }
+
+  /* PAGES */
+  .page { display: none; animation: fadeUp 0.4s ease; }
+  .page.active { display: block; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 24px;
+    transition: all 0.2s ease;
+  }
+  .card:hover {
+    border-color: var(--line-strong);
+  }
+  .card-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-faint);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .card-title .badge {
+    background: var(--bg-hover);
+    color: var(--ink-dim);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+  }
+
+  /* DASHBOARD GRID */
+  .dash-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .dash-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .dash-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .dash-grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* HERO STAT */
+  .hero-stat {
+    background: linear-gradient(135deg, var(--bg-card) 0%, #1f1d18 100%);
+    border: 1px solid var(--line-strong);
+    padding: 32px;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-stat::before {
+    content: '';
+    position: absolute;
+    top: -40%; right: -10%;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(212, 168, 87, 0.12), transparent 70%);
+    pointer-events: none;
+  }
+  .hero-stat .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--gold);
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .hero-stat .value {
+    font-family: 'Fraunces', serif;
+    font-size: 56px;
+    font-weight: 300;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .hero-stat .value .currency {
+    font-size: 24px;
+    color: var(--ink-dim);
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+  .hero-stat .delta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--emerald);
+  }
+  .hero-stat .delta.neg { color: var(--crimson); }
+
+  .stat-mini {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 130px;
+  }
+  .stat-mini .value {
+    font-family: 'Fraunces', serif;
+    font-size: 32px;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .stat-mini .sub {
+    font-size: 11px;
+    color: var(--ink-dim);
+    margin-top: 4px;
+  }
+
+  /* PROGRESS BAR */
+  .pbar {
+    width: 100%;
+    height: 6px;
+    background: var(--bg-hover);
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 8px 0;
+  }
+  .pbar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), var(--gold-bright));
+    border-radius: 3px;
+    transition: width 0.5s ease;
+  }
+  .pbar-fill.emerald { background: linear-gradient(90deg, var(--emerald), #8bbf9d); }
+  .pbar-fill.azure { background: linear-gradient(90deg, var(--azure), #7aaad0); }
+  .pbar-fill.plum { background: linear-gradient(90deg, var(--plum), #a98aae); }
+  .pbar-fill.crimson { background: linear-gradient(90deg, var(--crimson), #d57370); }
+
+  /* BUTTONS */
+  .btn {
+    background: var(--gold);
+    color: var(--bg);
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .btn:hover { background: var(--gold-bright); transform: translateY(-1px); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--line-strong);
+  }
+  .btn-ghost:hover { background: var(--bg-hover); border-color: var(--gold); color: var(--gold-bright); }
+  .btn-sm { padding: 6px 12px; font-size: 11px; }
+  .btn-danger { background: transparent; color: var(--crimson); border: 1px solid transparent; }
+  .btn-danger:hover { background: rgba(194,84,80,0.1); border-color: var(--crimson); }
+
+  /* INPUTS */
+  input, select, textarea {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 13px;
+    width: 100%;
+    transition: border-color 0.15s ease;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--gold);
+  }
+  input::placeholder { color: var(--ink-faint); }
+  label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  /* TABLES & LISTS */
+  .list-item {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .list-item:last-child { border-bottom: none; }
+  .list-item .name { font-weight: 500; font-size: 14px; }
+  .list-item .meta { font-size: 11px; color: var(--ink-dim); margin-top: 2px; }
+  .list-item .amount { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+
+  /* SECTION HEADER */
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .section-header h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 24px;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+  .section-header h2 em { color: var(--gold); font-weight: 300; }
+
+  /* CARTÕES DE CRÉDITO VISUAL */
+  .credit-card {
+    background: linear-gradient(135deg, #1a1a17 0%, #2a2620 100%);
+    border: 1px solid var(--line-strong);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    min-height: 170px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .credit-card::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -20%;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(212, 168, 87, 0.18), transparent 70%);
+  }
+  .credit-card .cc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    position: relative;
+  }
+  .credit-card .cc-bank {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    font-weight: 600;
+  }
+  .credit-card .cc-flag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+  }
+  .credit-card .cc-limit-info {
+    position: relative;
+  }
+  .credit-card .cc-used {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 400;
+  }
+  .credit-card .cc-of {
+    font-size: 11px;
+    color: var(--ink-dim);
+    margin-top: 2px;
+  }
+  .credit-card.over .cc-used { color: var(--crimson); }
+
+  /* GOAL ITEM */
+  .goal-item {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .goal-item:last-child { border: none; padding-bottom: 0; }
+  .goal-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .goal-item .title { font-weight: 500; font-size: 14px; }
+  .goal-item .pct { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--gold); }
+  .goal-item .deadline { font-size: 11px; color: var(--ink-faint); margin-top: 4px; }
+
+  /* HABIT TRACKER */
+  .habit-row {
+    display: grid;
+    grid-template-columns: 140px repeat(7, 1fr) auto;
+    gap: 4px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .habit-name { font-size: 13px; font-weight: 500; }
+  .habit-cell {
+    aspect-ratio: 1;
+    max-width: 32px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .habit-cell:hover { border-color: var(--gold); }
+  .habit-cell.done {
+    background: linear-gradient(135deg, var(--emerald), #8bbf9d);
+    border-color: var(--emerald);
+  }
+  .habit-streak {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--gold);
+    text-align: right;
+    padding-left: 8px;
+  }
+
+  /* MODAL */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-backdrop.show { display: flex; }
+  .modal {
+    background: var(--bg-card);
+    border: 1px solid var(--line-strong);
+    border-radius: 12px;
+    padding: 32px;
+    max-width: 500px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-deep);
+    animation: modalIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.96) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .modal h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 26px;
+    font-weight: 400;
+    margin-bottom: 24px;
+    letter-spacing: -0.01em;
+  }
+  .modal-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .modal-form-row.full { grid-template-columns: 1fr; }
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+  }
+
+  /* QUOTE */
+  .quote-block {
+    background: var(--bg-card);
+    border-left: 3px solid var(--gold);
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 18px;
+    color: var(--ink-dim);
+    line-height: 1.6;
+  }
+  .quote-block .author {
+    display: block;
+    margin-top: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-style: normal;
+    font-size: 10px;
+    color: var(--ink-faint);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* RING CHART */
+  .ring-container {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+  .ring {
+    width: 110px; height: 110px;
+    flex-shrink: 0;
+  }
+  .ring-track { fill: none; stroke: var(--bg-hover); stroke-width: 12; }
+  .ring-fill { fill: none; stroke: var(--gold); stroke-width: 12; stroke-linecap: round; transform: rotate(-90deg); transform-origin: center; transition: stroke-dasharray 0.6s ease; }
+  .ring-text {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    fill: var(--ink);
+    text-anchor: middle;
+  }
+
+  /* MOOD/ENERGY DOTS */
+  .dots-row { display: flex; gap: 4px; }
+  .dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--bg-hover);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .dot.active { background: var(--gold); box-shadow: 0 0 0 2px rgba(212,168,87,0.2); }
+  .dot:hover { transform: scale(1.15); }
+
+  /* TAB SYSTEM */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 24px;
+  }
+  .tab {
+    padding: 12px 20px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--ink-dim);
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s ease;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--gold-bright); border-bottom-color: var(--gold); }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--ink-faint);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 3px 10px;
+    background: var(--bg-hover);
+    border-radius: 12px;
+    font-size: 10px;
+    color: var(--ink-dim);
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.05em;
+    margin-right: 4px;
+  }
+  .tag.gold { background: rgba(212,168,87,0.15); color: var(--gold-bright); }
+  .tag.emerald { background: rgba(107,157,125,0.15); color: var(--emerald); }
+  .tag.crimson { background: rgba(194,84,80,0.15); color: var(--crimson); }
+  .tag.azure { background: rgba(90,141,181,0.15); color: var(--azure); }
+
+  /* TRANSACTION ROW */
+  .tx-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 14px;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .tx-row:last-child { border: none; }
+  .tx-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: var(--bg-hover);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .tx-amount {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .tx-amount.income { color: var(--emerald); }
+  .tx-amount.expense { color: var(--crimson); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+  /* RESPONSIVE */
+  @media (max-width: 1100px) {
+    .app { grid-template-columns: 200px 1fr; }
+    .main { padding: 24px 28px 60px; }
+    .dash-grid, .dash-grid-3, .dash-grid-4 { grid-template-columns: 1fr 1fr; }
+    .hero-stat .value { font-size: 42px; }
+  }
+  @media (max-width: 720px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { position: static; height: auto; }
+    .dash-grid, .dash-grid-2, .dash-grid-3, .dash-grid-4 { grid-template-columns: 1fr; }
+    .page-title { font-size: 32px; }
+    .modal-form-row { grid-template-columns: 1fr; }
+    .habit-row { grid-template-columns: 100px repeat(7, 1fr) auto; font-size: 11px; }
+  }
+
+  .saving-indicator {
+    position: fixed;
+    bottom: 20px; right: 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--gold);
+    color: var(--gold-bright);
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 200;
+    pointer-events: none;
+  }
+  .saving-indicator.show { opacity: 1; }
+
+  .reset-zone {
+    margin-top: 60px;
+    padding-top: 24px;
+    border-top: 1px dashed var(--line);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="lifelogo">Life</span>
+      <span class="os">/ OS</span>
+    </div>
+    <div class="tagline">Sistema operacional pessoal</div>
+
+    <div class="nav-section">
+      <div class="nav-label">Visão Geral</div>
+      <div class="nav-item active" data-page="dashboard">
+        <span class="nav-icon">◉</span>
+        <span>Dashboard</span>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Finanças</div>
+      <div class="nav-item" data-page="financas">
+        <span class="nav-icon">$</span>
+        <span>Visão Financeira</span>
+      </div>
+      <div class="nav-item" data-page="cartoes">
+        <span class="nav-icon">▤</span>
+        <span>Cartões</span>
+      </div>
+      <div class="nav-item" data-page="investimentos">
+        <span class="nav-icon">↗</span>
+        <span>Investimentos</span>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Vida</div>
+      <div class="nav-item" data-page="metas">
+        <span class="nav-icon">◎</span>
+        <span>Metas Anuais</span>
+      </div>
+      <div class="nav-item" data-page="rotina">
+        <span class="nav-icon">⌘</span>
+        <span>Rotina &amp; Hábitos</span>
+      </div>
+      <div class="nav-item" data-page="familia">
+        <span class="nav-icon">♥</span>
+        <span>Família</span>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Crescimento</div>
+      <div class="nav-item" data-page="estudos">
+        <span class="nav-icon">✦</span>
+        <span>Estudos</span>
+      </div>
+      <div class="nav-item" data-page="esporte">
+        <span class="nav-icon">▲</span>
+        <span>Esporte</span>
+      </div>
+      <div class="nav-item" data-page="viagens">
+        <span class="nav-icon">✈</span>
+        <span>Viagens &amp; Compras</span>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      DADOS LOCAIS<br>
+      AUTO-SAVE<br>
+      <span id="lastSave" style="color: var(--gold);">—</span>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="breadcrumb" id="breadcrumb">LIFE_OS / DASHBOARD</div>
+        <h1 class="page-title" id="pageTitle">Bom dia, <em>controle.</em></h1>
+      </div>
+      <div class="topbar-meta" id="topbarMeta"></div>
+    </div>
+
+    <!-- ============= DASHBOARD ============= -->
+    <section class="page active" id="page-dashboard">
+      <div class="quote-block" id="dailyQuote">
+        "Você não vai elevar-se ao nível das suas metas. Você vai cair ao nível dos seus sistemas."
+        <span class="author">— James Clear</span>
+      </div>
+
+      <div class="dash-grid">
+        <div class="hero-stat">
+          <div class="label">Patrimônio Líquido</div>
+          <div class="value"><span class="currency">R$</span><span id="heroNetWorth">0</span></div>
+          <div class="delta" id="heroDelta">— defina suas finanças para começar</div>
+        </div>
+        <div class="card stat-mini">
+          <div class="card-title">Saldo do Mês</div>
+          <div>
+            <div class="value">R$ <span id="monthBalance">0</span></div>
+            <div class="sub" id="monthBalanceSub">Receitas − Despesas</div>
+          </div>
+        </div>
+        <div class="card stat-mini">
+          <div class="card-title">Limite Disponível</div>
+          <div>
+            <div class="value">R$ <span id="totalAvailable">0</span></div>
+            <div class="sub" id="totalAvailableSub">de R$ 0 totais</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dash-grid-2">
+        <div class="card">
+          <div class="card-title">Metas do Ano <span class="badge" id="goalsBadge">0</span></div>
+          <div id="dashGoalsList">
+            <div class="empty-state">Nenhuma meta cadastrada — vá em <strong>Metas Anuais</strong></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Hábitos da Semana</div>
+          <div class="ring-container">
+            <svg class="ring" viewBox="0 0 100 100">
+              <circle class="ring-track" cx="50" cy="50" r="42"></circle>
+              <circle class="ring-fill" id="habitRing" cx="50" cy="50" r="42" stroke-dasharray="0 264"></circle>
+              <text class="ring-text" x="50" y="56" id="habitRingText">0%</text>
+            </svg>
+            <div>
+              <div style="font-size: 13px; color: var(--ink-dim); margin-bottom: 6px;">Consistência semanal</div>
+              <div style="font-family: 'Fraunces', serif; font-size: 22px; line-height: 1.2;" id="habitSummary">— sem hábitos</div>
+              <div style="font-size: 11px; color: var(--ink-faint); margin-top: 6px;">Defina hábitos em Rotina</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dash-grid-3">
+        <div class="card">
+          <div class="card-title">Tempo com Família</div>
+          <div style="font-family: 'Fraunces', serif; font-size: 28px;" id="familyTime">0h</div>
+          <div style="font-size: 11px; color: var(--ink-dim); margin-top: 4px;">esta semana</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Estudos</div>
+          <div style="font-family: 'Fraunces', serif; font-size: 28px;" id="studyTime">0h</div>
+          <div style="font-size: 11px; color: var(--ink-dim); margin-top: 4px;">esta semana</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Treinos</div>
+          <div style="font-family: 'Fraunces', serif; font-size: 28px;" id="workoutCount">0</div>
+          <div style="font-size: 11px; color: var(--ink-dim); margin-top: 4px;">esta semana</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 16px;">
+        <div class="card-title">Próximas Viagens / Compras Planejadas</div>
+        <div id="dashTrips">
+          <div class="empty-state">Nenhum plano cadastrado</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============= FINANÇAS ============= -->
+    <section class="page" id="page-financas">
+      <div class="dash-grid-3">
+        <div class="hero-stat">
+          <div class="label">Receita do Mês</div>
+          <div class="value" style="color: var(--emerald);"><span class="currency">R$</span><span id="finIncome">0</span></div>
+        </div>
+        <div class="hero-stat">
+          <div class="label">Despesas do Mês</div>
+          <div class="value" style="color: var(--crimson);"><span class="currency">R$</span><span id="finExpense">0</span></div>
+        </div>
+        <div class="hero-stat">
+          <div class="label">Reserva</div>
+          <div class="value"><span class="currency">R$</span><span id="finReserve">0</span></div>
+        </div>
+      </div>
+
+      <div class="dash-grid-2">
+        <div class="card">
+          <div class="section-header">
+            <h2>Lançar <em>transação</em></h2>
+          </div>
+          <div class="modal-form-row">
+            <div>
+              <label>Tipo</label>
+              <select id="txType">
+                <option value="income">Receita</option>
+                <option value="expense">Despesa</option>
+              </select>
+            </div>
+            <div>
+              <label>Valor (R$)</label>
+              <input type="number" step="0.01" id="txAmount" placeholder="0,00">
+            </div>
+          </div>
+          <div class="modal-form-row full">
+            <div>
+              <label>Descrição</label>
+              <input type="text" id="txDesc" placeholder="Ex: Salário, Mercado, Cinema...">
+            </div>
+          </div>
+          <div class="modal-form-row">
+            <div>
+              <label>Categoria</label>
+              <select id="txCategory">
+                <option>Salário</option>
+                <option>Freelance</option>
+                <option>Investimento</option>
+                <option>Alimentação</option>
+                <option>Moradia</option>
+                <option>Transporte</option>
+                <option>Lazer</option>
+                <option>Saúde</option>
+                <option>Educação</option>
+                <option>Família</option>
+                <option>Outros</option>
+              </select>
+            </div>
+            <div>
+              <label>Data</label>
+              <input type="date" id="txDate">
+            </div>
+          </div>
+          <button class="btn" style="width: 100%; margin-top: 8px;" onclick="addTransaction()">+ Lançar</button>
+        </div>
+
+        <div class="card">
+          <div class="section-header">
+            <h2>Reserva de <em>emergência</em></h2>
+          </div>
+          <label>Saldo atual da reserva (R$)</label>
+          <input type="number" step="0.01" id="reserveInput" placeholder="0,00">
+          <div style="margin-top: 12px;">
+            <label>Meta de reserva (R$)</label>
+            <input type="number" step="0.01" id="reserveGoal" placeholder="Ex: 6 meses de despesa">
+          </div>
+          <button class="btn btn-ghost" style="width: 100%; margin-top: 14px;" onclick="saveReserve()">Salvar Reserva</button>
+          <div class="pbar" style="margin-top: 16px;">
+            <div class="pbar-fill emerald" id="reserveBar" style="width: 0%"></div>
+          </div>
+          <div style="font-size: 11px; color: var(--ink-dim); text-align: center;" id="reserveStatus">—</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 16px;">
+        <div class="section-header">
+          <h2>Histórico de <em>transações</em></h2>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-faint);" id="txCount">0 lançamentos</span>
+        </div>
+        <div id="txList">
+          <div class="empty-state">Sem transações ainda. Lance a primeira acima.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============= CARTÕES ============= -->
+    <section class="page" id="page-cartoes">
+      <div class="section-header">
+        <h2>Seus <em>cartões</em></h2>
+        <button class="btn" onclick="openCardModal()">+ Adicionar Cartão</button>
+      </div>
+
+      <div class="dash-grid-3" id="cardsGrid">
+        <div class="empty-state" style="grid-column: 1/-1;">Nenhum cartão cadastrado ainda.</div>
+      </div>
+
+      <div class="card" style="margin-top: 24px;">
+        <div class="card-title">Total de limite</div>
+        <div class="dash-grid-3">
+          <div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-faint); letter-spacing: 0.15em;">UTILIZADO</div>
+            <div style="font-family: 'Fraunces', serif; font-size: 26px; color: var(--crimson);">R$ <span id="ccTotalUsed">0</span></div>
+          </div>
+          <div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-faint); letter-spacing: 0.15em;">DISPONÍVEL</div>
+            <div style="font-family: 'Fraunces', serif; font-size: 26px; color: var(--emerald);">R$ <span id="ccTotalAvail">0</span></div>
+          </div>
+          <div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-faint); letter-spacing: 0.15em;">LIMITE TOTAL</div>
+            <div style="font-family: 'Fraunces', serif; font-size: 26px;">R$ <span id="ccTotalLimit">0</span></div>
+          </div>
+        </div>
+        <div class="pbar" style="height: 10px; margin-top: 16px;">
+          <div class="pbar-fill crimson" id="ccTotalBar" style="width: 0%"></div>
+        </div>
+        <div style="font-size: 11px; color: var(--ink-dim); margin-top: 6px; text-align: center;" id="ccTotalPct">0% de utilização</div>
+      </div>
+    </section>
+
+    <!-- ============= INVESTIMENTOS ============= -->
+    <section class="page" id="page-investimentos">
+      <div class="section-header">
+        <h2>Carteira de <em>investimentos</em></h2>
+        <button class="btn" onclick="openInvestModal()">+ Adicionar Posição</button>
+      </div>
+
+      <div class="dash-grid-3">
+        <div class="hero-stat">
+          <div class="label">Total Investido</div>
+          <div class="value"><span class="currency">R$</span><span id="invTotal">0</span></div>
+        </div>
+        <div class="card stat-mini">
+          <div class="card-title">Renda Fixa</div>
+          <div><div class="value">R$ <span id="invFixed">0</span></div></div>
+        </div>
+        <div class="card stat-mini">
+          <div class="card-title">Renda Variável</div>
+          <div><div class="value">R$ <span id="invVariable">0</span></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Posições</div>
+        <div id="invList">
+          <div class="empty-state">Nenhum investimento cadastrado.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============= METAS ============= -->
+    <section class="page" id="page-metas">
+      <div class="section-header">
+        <h2>Metas do <em>ano</em></h2>
+        <button class="btn" onclick="openGoalModal()">+ Nova Meta</button>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" data-tab="all">TODAS</div>
+        <div class="tab" data-tab="financeira">FINANCEIRAS</div>
+        <div class="tab" data-tab="profissional">PROFISSIONAIS</div>
+        <div class="tab" data-tab="pessoal">PESSOAIS</div>
+        <div class="tab" data-tab="compra">COMPRAS</div>
+      </div>
+
+      <div class="card">
+        <div id="goalsList">
+          <div class="empty-state">Nenhuma meta ainda. Crie a primeira para começar.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============= ROTINA ============= -->
+    <section class="page" id="page-rotina">
+      <div class="section-header">
+        <h2>Hábitos &amp; <em>rotina</em></h2>
+        <button class="btn" onclick="openHabitModal()">+ Novo Hábito</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Tracker semanal — clique para marcar</div>
+        <div class="habit-row" style="border-bottom: 1px solid var(--line-strong); font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-faint); letter-spacing: 0.1em;">
+          <div></div>
+          <div style="text-align: center;">SEG</div>
+          <div style="text-align: center;">TER</div>
+          <div style="text-align: center;">QUA</div>
+          <div style="text-align: center;">QUI</div>
+          <div style="text-align: center;">SEX</div>
+          <div style="text-align: center;">SÁB</div>
+          <div style="text-align: center;">DOM</div>
+          <div style="text-align: right;">STREAK</div>
+        </div>
+        <div id="habitsList"></div>
+      </div>
+
+      <div class="dash-grid-2" style="margin-top: 16px;">
+        <div class="card">
+          <div class="card-title">Energia hoje</div>
+          <div class="dots-row" id="energyDots" style="margin-bottom: 12px;">
+            <div class="dot" data-val="1"></div>
+            <div class="dot" data-val="2"></div>
+            <div class="dot" data-val="3"></div>
+            <div class="dot" data-val="4"></div>
+            <div class="dot" data-val="5"></div>
+          </div>
+          <div style="font-size: 11px; color: var(--ink-dim);" id="energyLabel">—</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Foco hoje</div>
+          <div class="dots-row" id="focusDots" style="margin-bottom: 12px;">
+            <div class="dot" data-val="1"></div>
+            <div class="dot" data-val="2"></div>
+            <div class="dot" data-val="3"></div>
+            <div class="dot" data-val="4"></div>
+            <div class="dot" data-val="5"></div>
+          </div>
+          <div style="font-size: 11px; color: var(--ink-dim);" id="focusLabel">—</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============= FAMÍLIA ============= -->
+    <section class="page" id="page-familia">
+      <div class="dash-grid-2">
+        <div class="card">
+          <div class="section-header">
+            <h2>Tempo de <em>qualidade</em></h2>
+          </div>
+          <p style="font-size: 13px; color: var(--ink-dim); margin-bottom: 16px;">Registre momentos significativos com a família. O que importa é a presença, não o tempo cronológico.</p>
+          <div class="modal-form-row">
+            <div>
+              <label>Data</label>
+              <input type="date" id="famDate">
+            </div>
+            <div>
+              <label>Duração (h)</label>
+              <input type="number" step="0.5" id="famHours" placeholder="2">
+            </div>
+          </div>
+          <div class="modal-form-row full">
+            <div>
+              <label>O que vocês fizeram</label>
+              <input type="text" id="famActivity" placeholder="Ex: Jantar fora, parque, jogo de tabuleiro...">
+            </div>
+          </div>
+          <button class="btn" style="width: 100%;" onclick="addFamilyTime()">+ Registrar momento</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Esta semana</div>
+          <div style="font-family: 'Fraunces', serif; font-size: 56px; line-height: 1;"><span id="famWeekTotal">0</span><span style="font-size: 24px; color: var(--ink-dim);">h</span></div>
+          <div style="font-size: 12px; color: var(--ink-dim); margin-top: 8px;" id="famWeekCount">0 momentos registrados</div>
+          <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--line);">
+            <div class="card-title">Meta semanal (h)</div>
+            <input type="number" step="0.5" id="famGoalInput" placeholder="Ex: 15" onchange="saveFamilyGoal()">
+            <div class="pbar" style="margin-top: 12px;">
+              <div class="pbar-fill emerald" id="famGoalBar" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 16px;">
+        <div class="section-header">
+          <h2>Histórico</h2>
+        </div>
+        <div id="famList">
+          <div class="empty-state">Nenhum momento registrado ainda.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============= ESTUDOS ============= -->
+    <section class="page" id="page-estudos">
+      <div class="section-header">
+        <h2>Plano de <em>estudos</em></h2>
+        <button class="btn" onclick="openStudyModal()">+ Novo Curso/Livro</button>
+      </div>
+
+      <div class="dash-grid-3">
+        <div class="card stat-mini">
+          <div class="card-title">Em andamento</div>
+          <div><div class="value" id="studyActive">0</div></div>
+        </div>
+        <div class="card stat-mini">
+          <div class="card-title">Concluídos</div>
+          <div><div class="value" id="studyDone">0</div></div>
+        </div>
+        <div class="card stat-mini">
+          <div class="card-title">Horas/semana</div>
+          <div><div class="value"><span id="studyWeekHours">0</span>h</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Sessão de estudo rápida</div>
+        <div class="modal-form-row">
+          <div>
+            <label>Curso/Livro</label>
+            <select id="studySession"></select>
+          </div>
+          <div>
+            <label>Duração (h)</label>
+            <input type="number" step="0.5" id="studySessionHours" placeholder="1">
+          </div>
+        </div>
+        <button class="btn btn-ghost" style="width: 100%;" onclick="logStudySession()">+ Registrar sessão</button>
+      </div>
+
+      <div class="card" style="margin-top: 16px;">
+        <div class="card-title">Sua biblioteca</div>
+        <div id="studyList">
+          <div class="empty-state">Adicione cursos e livros que está estudando.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============= ESPORTE ============= -->
+    <section class="page" id="page-esporte">
+      <div class="section-header">
+        <h2>Treinos &amp; <em>saúde</em></h2>
+        <button class="btn" onclick="openWorkoutModal()">+ Registrar Treino</button>
+      </div>
+
+      <div class="dash-grid-4">
+        <div class="card stat-mini">
+          <div class="card-title">Treinos no mês</div>
+          <div><div class="value" id="wkMonth">0</div></div>
+        </div>
+        <div class="card stat-mini">
+          <div class="card-title">Esta semana</div>
+          <div><div class="value" id="wkWeek">0</div></div>
+        </div>
+        <div class="card stat-mini">
+          <div class="card-title">Streak atual</div>
+          <div><div class="value" id="wkStreak">0</div><div class="sub">dias seguidos</div></div>
+        </div>
+        <div class="card stat-mini">
+          <div class="card-title">Meta semanal</div>
+          <div>
+            <input type="number" id="wkGoal" placeholder="4" style="width: 60px; display: inline-block;" onchange="saveWorkoutGoal()">
+            <div class="sub">treinos/semana</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Histórico</div>
+        <div id="workoutList">
+          <div class="empty-state">Nenhum treino registrado.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============= VIAGENS ============= -->
+    <section class="page" id="page-viagens">
+      <div class="section-header">
+        <h2>Viagens &amp; <em>compras</em> planejadas</h2>
+        <button class="btn" onclick="openTripModal()">+ Novo Plano</button>
+      </div>
+
+      <div class="card">
+        <div id="tripsList">
+          <div class="empty-state">Nenhuma viagem ou compra planejada ainda.</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="reset-zone">
+      <button class="btn-danger btn-sm btn" style="background: transparent; color: var(--ink-faint); border: 1px solid var(--line);" onclick="resetAll()">↻ Resetar todos os dados</button>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODALS -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<div class="saving-indicator" id="savingIndicator">✓ Salvo</div>
+
+<script>
+/* ============================================================
+   LIFE OS — JavaScript
+   Persistência via window.storage (Claude Artifacts)
+   Fallback: variável em memória
+============================================================ */
+
+// ===== STORAGE LAYER =====
+const hasClaudeStorage = typeof window.storage !== 'undefined' && window.storage;
+let memoryStore = {};
+
+async function storageGet(key) {
+  if (hasClaudeStorage) {
+    try {
+      const r = await window.storage.get(key);
+      return r ? r.value : null;
+    } catch (e) {
+      return null;
+    }
+  }
+  return memoryStore[key] || null;
+}
+
+async function storageSet(key, value) {
+  if (hasClaudeStorage) {
+    try {
+      await window.storage.set(key, value);
+    } catch (e) {
+      console.warn('Storage failed', e);
+    }
+  } else {
+    memoryStore[key] = value;
+  }
+  showSaveIndicator();
+  updateLastSave();
+}
+
+async function storageDel(key) {
+  if (hasClaudeStorage) {
+    try { await window.storage.delete(key); } catch (e) {}
+  } else {
+    delete memoryStore[key];
+  }
+}
+
+let saveTimer;
+function showSaveIndicator() {
+  const ind = document.getElementById('savingIndicator');
+  ind.classList.add('show');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => ind.classList.remove('show'), 1200);
+}
+
+function updateLastSave() {
+  const el = document.getElementById('lastSave');
+  if (el) {
+    const now = new Date();
+    el.textContent = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+}
+
+// ===== STATE =====
+const state = {
+  transactions: [],
+  cards: [],
+  investments: [],
+  goals: [],
+  habits: [],
+  habitLog: {}, // { habitId: { 'YYYY-WW-D': true } }
+  familyTime: [],
+  familyGoal: 0,
+  studyItems: [],
+  studySessions: [],
+  workouts: [],
+  workoutGoal: 0,
+  trips: [],
+  reserve: 0,
+  reserveGoal: 0,
+  energy: {}, // { 'YYYY-MM-DD': value }
+  focus: {},
+};
+
+async function loadState() {
+  const keys = Object.keys(state);
+  for (const k of keys) {
+    const val = await storageGet('lifeos_' + k);
+    if (val !== null && val !== undefined) {
+      try {
+        state[k] = typeof val === 'string' ? JSON.parse(val) : val;
+      } catch (e) {
+        state[k] = val;
+      }
+    }
+  }
+}
+
+async function saveKey(key) {
+  await storageSet('lifeos_' + key, JSON.stringify(state[key]));
+}
+
+// ===== UTILS =====
+const fmt = (n) => {
+  const num = Number(n) || 0;
+  return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+const fmt0 = (n) => {
+  const num = Number(n) || 0;
+  return num.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+};
+const todayISO = () => new Date().toISOString().slice(0, 10);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+function getWeekDay() {
+  // Monday = 0
+  const d = new Date().getDay();
+  return d === 0 ? 6 : d - 1;
+}
+
+function getWeekKey(date = new Date()) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+  const yearStart = new Date(d.getFullYear(), 0, 1);
+  const weekNum = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return `${d.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+}
+
+function isThisWeek(dateStr) {
+  if (!dateStr) return false;
+  return getWeekKey(new Date(dateStr)) === getWeekKey();
+}
+
+function isThisMonth(dateStr) {
+  if (!dateStr) return false;
+  const d = new Date(dateStr);
+  const now = new Date();
+  return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+}
+
+// ===== NAVIGATION =====
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const page = el.dataset.page;
+    document.getElementById('page-' + page).classList.add('active');
+    updateBreadcrumb(page);
+    renderAll();
+  });
+});
+
+function updateBreadcrumb(page) {
+  const titles = {
+    dashboard: { bc: 'LIFE_OS / DASHBOARD', t: greeting() },
+    financas: { bc: 'LIFE_OS / FINANCAS / VISAO', t: 'Visão <em>financeira</em>' },
+    cartoes: { bc: 'LIFE_OS / FINANCAS / CARTOES', t: 'Cartões de <em>crédito</em>' },
+    investimentos: { bc: 'LIFE_OS / FINANCAS / INVESTIMENTOS', t: 'Investimentos &amp; <em>patrimônio</em>' },
+    metas: { bc: 'LIFE_OS / VIDA / METAS', t: 'Metas <em>anuais</em>' },
+    rotina: { bc: 'LIFE_OS / VIDA / ROTINA', t: 'Rotina &amp; <em>hábitos</em>' },
+    familia: { bc: 'LIFE_OS / VIDA / FAMILIA', t: 'Tempo com <em>família</em>' },
+    estudos: { bc: 'LIFE_OS / CRESCIMENTO / ESTUDOS', t: 'Estudos &amp; <em>aprendizado</em>' },
+    esporte: { bc: 'LIFE_OS / CRESCIMENTO / ESPORTE', t: 'Esporte &amp; <em>saúde</em>' },
+    viagens: { bc: 'LIFE_OS / CRESCIMENTO / VIAGENS', t: 'Viagens &amp; <em>compras</em>' },
+  };
+  const cfg = titles[page];
+  document.getElementById('breadcrumb').textContent = cfg.bc;
+  document.getElementById('pageTitle').innerHTML = cfg.t;
+}
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 6) return 'Boa madrugada, <em>foco.</em>';
+  if (h < 12) return 'Bom dia, <em>controle.</em>';
+  if (h < 18) return 'Boa tarde, <em>execução.</em>';
+  return 'Boa noite, <em>reflexão.</em>';
+}
+
+// ===== TOPBAR META =====
+function updateTopbar() {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+  const time = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  document.getElementById('topbarMeta').innerHTML = `
+    <div><strong>${dateStr.toUpperCase()}</strong></div>
+    <div>${time} · SEMANA ${getWeekKey().slice(-2)}</div>
+  `;
+}
+
+// ===== TRANSACTIONS =====
+async function addTransaction() {
+  const type = document.getElementById('txType').value;
+  const amount = parseFloat(document.getElementById('txAmount').value);
+  const desc = document.getElementById('txDesc').value.trim();
+  const cat = document.getElementById('txCategory').value;
+  const date = document.getElementById('txDate').value || todayISO();
+  if (!amount || !desc) { alert('Preencha valor e descrição'); return; }
+  state.transactions.push({ id: uid(), type, amount, desc, category: cat, date });
+  state.transactions.sort((a, b) => b.date.localeCompare(a.date));
+  await saveKey('transactions');
+  document.getElementById('txAmount').value = '';
+  document.getElementById('txDesc').value = '';
+  renderAll();
+}
+
+async function deleteTransaction(id) {
+  state.transactions = state.transactions.filter(t => t.id !== id);
+  await saveKey('transactions');
+  renderAll();
+}
+
+function renderTransactions() {
+  const list = document.getElementById('txList');
+  if (!state.transactions.length) {
+    list.innerHTML = '<div class="empty-state">Sem transações ainda.</div>';
+  } else {
+    const recent = state.transactions.slice(0, 30);
+    list.innerHTML = recent.map(t => `
+      <div class="tx-row">
+        <div class="tx-icon">${t.type === 'income' ? '↗' : '↘'}</div>
+        <div>
+          <div style="font-weight: 500;">${t.desc}</div>
+          <div style="font-size: 11px; color: var(--ink-dim);">
+            <span class="tag">${t.category}</span> · ${formatDate(t.date)}
+          </div>
+        </div>
+        <div class="tx-amount ${t.type}">${t.type === 'income' ? '+' : '−'} R$ ${fmt(t.amount)}</div>
+        <button class="btn-danger btn btn-sm" onclick="deleteTransaction('${t.id}')">×</button>
+      </div>
+    `).join('');
+  }
+  document.getElementById('txCount').textContent = state.transactions.length + ' lançamentos';
+
+  const monthIncome = state.transactions.filter(t => t.type === 'income' && isThisMonth(t.date)).reduce((s, t) => s + Number(t.amount), 0);
+  const monthExpense = state.transactions.filter(t => t.type === 'expense' && isThisMonth(t.date)).reduce((s, t) => s + Number(t.amount), 0);
+  document.getElementById('finIncome').textContent = fmt(monthIncome);
+  document.getElementById('finExpense').textContent = fmt(monthExpense);
+  document.getElementById('finReserve').textContent = fmt(state.reserve);
+  document.getElementById('monthBalance').textContent = fmt(monthIncome - monthExpense);
+  document.getElementById('monthBalanceSub').textContent = `Receitas R$ ${fmt(monthIncome)} − Despesas R$ ${fmt(monthExpense)}`;
+}
+
+function formatDate(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y.slice(2)}`;
+}
+
+// ===== RESERVE =====
+async function saveReserve() {
+  state.reserve = parseFloat(document.getElementById('reserveInput').value) || 0;
+  state.reserveGoal = parseFloat(document.getElementById('reserveGoal').value) || 0;
+  await saveKey('reserve');
+  await saveKey('reserveGoal');
+  renderAll();
+}
+
+function renderReserve() {
+  document.getElementById('reserveInput').value = state.reserve || '';
+  document.getElementById('reserveGoal').value = state.reserveGoal || '';
+  const pct = state.reserveGoal > 0 ? Math.min(100, (state.reserve / state.reserveGoal) * 100) : 0;
+  document.getElementById('reserveBar').style.width = pct + '%';
+  document.getElementById('reserveStatus').textContent = state.reserveGoal
+    ? `R$ ${fmt(state.reserve)} de R$ ${fmt(state.reserveGoal)} (${pct.toFixed(0)}%)`
+    : 'Defina uma meta para acompanhar';
+}
+
+// ===== CARDS =====
+function openCardModal(editId = null) {
+  const card = editId ? state.cards.find(c => c.id === editId) : null;
+  showModal(`
+    <h3>${card ? 'Editar' : 'Novo'} cartão</h3>
+    <div class="modal-form-row full">
+      <div><label>Nome / Banco</label><input type="text" id="ccName" placeholder="Ex: Nubank Black" value="${card ? card.name : ''}"></div>
+    </div>
+    <div class="modal-form-row">
+      <div><label>Bandeira</label><select id="ccFlag">
+        <option ${card?.flag === 'VISA' ? 'selected' : ''}>VISA</option>
+        <option ${card?.flag === 'MASTER' ? 'selected' : ''}>MASTER</option>
+        <option ${card?.flag === 'ELO' ? 'selected' : ''}>ELO</option>
+        <option ${card?.flag === 'AMEX' ? 'selected' : ''}>AMEX</option>
+        <option ${card?.flag === 'HIPER' ? 'selected' : ''}>HIPER</option>
+      </select></div>
+      <div><label>Vencimento (dia)</label><input type="number" min="1" max="31" id="ccDue" value="${card?.dueDay || ''}"></div>
+    </div>
+    <div class="modal-form-row">
+      <div><label>Limite total (R$)</label><input type="number" step="0.01" id="ccLimit" value="${card?.limit || ''}"></div>
+      <div><label>Fatura atual (R$)</label><input type="number" step="0.01" id="ccUsed" value="${card?.used || ''}"></div>
+    </div>
+    <div class="modal-actions">
+      ${card ? `<button class="btn btn-danger" onclick="deleteCard('${card.id}')">Excluir</button>` : ''}
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn" onclick="saveCard('${editId || ''}')">Salvar</button>
+    </div>
+  `);
+}
+
+async function saveCard(id) {
+  const data = {
+    id: id || uid(),
+    name: document.getElementById('ccName').value.trim(),
+    flag: document.getElementById('ccFlag').value,
+    dueDay: parseInt(document.getElementById('ccDue').value) || 0,
+    limit: parseFloat(document.getElementById('ccLimit').value) || 0,
+    used: parseFloat(document.getElementById('ccUsed').value) || 0,
+  };
+  if (!data.name) { alert('Nome é obrigatório'); return; }
+  if (id) {
+    const idx = state.cards.findIndex(c => c.id === id);
+    state.cards[idx] = data;
+  } else {
+    state.cards.push(data);
+  }
+  await saveKey('cards');
+  closeModal();
+  renderAll();
+}
+
+async function deleteCard(id) {
+  if (!confirm('Excluir cartão?')) return;
+  state.cards = state.cards.filter(c => c.id !== id);
+  await saveKey('cards');
+  closeModal();
+  renderAll();
+}
+
+function renderCards() {
+  const grid = document.getElementById('cardsGrid');
+  if (!state.cards.length) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;">Nenhum cartão cadastrado ainda.</div>';
+  } else {
+    grid.innerHTML = state.cards.map(c => {
+      const pct = c.limit > 0 ? (c.used / c.limit) * 100 : 0;
+      const over = pct > 80;
+      return `
+        <div class="credit-card ${over ? 'over' : ''}" onclick="openCardModal('${c.id}')" style="cursor: pointer;">
+          <div class="cc-header">
+            <div class="cc-bank">${c.name}</div>
+            <div class="cc-flag">${c.flag}</div>
+          </div>
+          <div class="cc-limit-info">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.2em; color: var(--ink-faint);">FATURA / LIMITE</div>
+            <div class="cc-used">R$ ${fmt(c.used)}</div>
+            <div class="cc-of">de R$ ${fmt(c.limit)} · vence dia ${c.dueDay}</div>
+            <div class="pbar" style="margin-top: 8px;">
+              <div class="pbar-fill ${over ? 'crimson' : ''}" style="width: ${Math.min(100, pct)}%"></div>
+            </div>
+            <div style="font-size: 10px; color: ${over ? 'var(--crimson)' : 'var(--ink-dim)'}; margin-top: 4px;">${pct.toFixed(0)}% utilizado</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  const totalLimit = state.cards.reduce((s, c) => s + Number(c.limit), 0);
+  const totalUsed = state.cards.reduce((s, c) => s + Number(c.used), 0);
+  const avail = totalLimit - totalUsed;
+  document.getElementById('ccTotalUsed').textContent = fmt(totalUsed);
+  document.getElementById('ccTotalAvail').textContent = fmt(avail);
+  document.getElementById('ccTotalLimit').textContent = fmt(totalLimit);
+  const pct = totalLimit > 0 ? (totalUsed / totalLimit) * 100 : 0;
+  document.getElementById('ccTotalBar').style.width = Math.min(100, pct) + '%';
+  document.getElementById('ccTotalPct').textContent = pct.toFixed(0) + '% de utilização';
+
+  // Dashboard
+  document.getElementById('totalAvailable').textContent = fmt(avail);
+  document.getElementById('totalAvailableSub').textContent = `de R$ ${fmt(totalLimit)} totais`;
+}
+
+// ===== INVESTMENTS =====
+function openInvestModal(editId = null) {
+  const inv = editId ? state.investments.find(i => i.id === editId) : null;
+  showModal(`
+    <h3>${inv ? 'Editar' : 'Nova'} posição</h3>
+    <div class="modal-form-row full">
+      <div><label>Nome do ativo</label><input type="text" id="invName" placeholder="Ex: Tesouro Selic, ITSA4..." value="${inv ? inv.name : ''}"></div>
+    </div>
+    <div class="modal-form-row">
+      <div><label>Tipo</label><select id="invType">
+        <option value="fixed" ${inv?.type === 'fixed' ? 'selected' : ''}>Renda Fixa</option>
+        <option value="variable" ${inv?.type === 'variable' ? 'selected' : ''}>Renda Variável</option>
+        <option value="other" ${inv?.type === 'other' ? 'selected' : ''}>Outros</option>
+      </select></div>
+      <div><label>Valor atual (R$)</label><input type="number" step="0.01" id="invAmount" value="${inv?.amount || ''}"></div>
+    </div>
+    <div class="modal-actions">
+      ${inv ? `<button class="btn btn-danger" onclick="deleteInvest('${inv.id}')">Excluir</button>` : ''}
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn" onclick="saveInvest('${editId || ''}')">Salvar</button>
+    </div>
+  `);
+}
+
+async function saveInvest(id) {
+  const data = {
+    id: id || uid(),
+    name: document.getElementById('invName').value.trim(),
+    type: document.getElementById('invType').value,
+    amount: parseFloat(document.getElementById('invAmount').value) || 0,
+  };
+  if (!data.name) { alert('Nome obrigatório'); return; }
+  if (id) {
+    const idx = state.investments.findIndex(i => i.id === id);
+    state.investments[idx] = data;
+  } else {
+    state.investments.push(data);
+  }
+  await saveKey('investments');
+  closeModal();
+  renderAll();
+}
+
+async function deleteInvest(id) {
+  state.investments = state.investments.filter(i => i.id !== id);
+  await saveKey('investments');
+  closeModal();
+  renderAll();
+}
+
+function renderInvestments() {
+  const list = document.getElementById('invList');
+  if (!state.investments.length) {
+    list.innerHTML = '<div class="empty-state">Nenhum investimento cadastrado.</div>';
+  } else {
+    list.innerHTML = state.investments.map(i => `
+      <div class="list-item" onclick="openInvestModal('${i.id}')" style="cursor:pointer;">
+        <div>
+          <div class="name">${i.name}</div>
+          <div class="meta"><span class="tag ${i.type === 'fixed' ? 'azure' : i.type === 'variable' ? 'gold' : ''}">${i.type === 'fixed' ? 'Renda Fixa' : i.type === 'variable' ? 'Renda Variável' : 'Outros'}</span></div>
+        </div>
+        <div class="amount">R$ ${fmt(i.amount)}</div>
+      </div>
+    `).join('');
+  }
+  const fixed = state.investments.filter(i => i.type === 'fixed').reduce((s, i) => s + Number(i.amount), 0);
+  const variable = state.investments.filter(i => i.type === 'variable').reduce((s, i) => s + Number(i.amount), 0);
+  const other = state.investments.filter(i => i.type === 'other').reduce((s, i) => s + Number(i.amount), 0);
+  const total = fixed + variable + other;
+  document.getElementById('invTotal').textContent = fmt(total);
+  document.getElementById('invFixed').textContent = fmt(fixed);
+  document.getElementById('invVariable').textContent = fmt(variable);
+
+  // Dashboard hero
+  const reserveAmt = Number(state.reserve) || 0;
+  const cardDebt = state.cards.reduce((s, c) => s + Number(c.used), 0);
+  const netWorth = total + reserveAmt - cardDebt;
+  document.getElementById('heroNetWorth').textContent = fmt0(Math.max(0, netWorth));
+  const monthIncome = state.transactions.filter(t => t.type === 'income' && isThisMonth(t.date)).reduce((s, t) => s + Number(t.amount), 0);
+  const monthExpense = state.transactions.filter(t => t.type === 'expense' && isThisMonth(t.date)).reduce((s, t) => s + Number(t.amount), 0);
+  const balance = monthIncome - monthExpense;
+  const deltaEl = document.getElementById('heroDelta');
+  if (state.transactions.length === 0 && total === 0 && state.cards.length === 0) {
+    deltaEl.textContent = '— defina suas finanças para começar';
+    deltaEl.classList.remove('neg');
+  } else {
+    deltaEl.textContent = `${balance >= 0 ? '↗' : '↘'} R$ ${fmt(Math.abs(balance))} este mês`;
+    deltaEl.classList.toggle('neg', balance < 0);
+  }
+}
+
+// ===== GOALS =====
+let activeGoalTab = 'all';
+document.querySelectorAll('#page-metas .tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('#page-metas .tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    activeGoalTab = t.dataset.tab;
+    renderGoals();
+  });
+});
+
+function openGoalModal(editId = null) {
+  const g = editId ? state.goals.find(x => x.id === editId) : null;
+  showModal(`
+    <h3>${g ? 'Editar' : 'Nova'} meta</h3>
+    <div class="modal-form-row full">
+      <div><label>Título</label><input type="text" id="gTitle" value="${g ? g.title : ''}" placeholder="Ex: Comprar carro novo, Promoção, Maratona..."></div>
+    </div>
+    <div class="modal-form-row">
+      <div><label>Categoria</label><select id="gCat">
+        <option value="financeira" ${g?.cat === 'financeira' ? 'selected' : ''}>Financeira</option>
+        <option value="profissional" ${g?.cat === 'profissional' ? 'selected' : ''}>Profissional</option>
+        <option value="pessoal" ${g?.cat === 'pessoal' ? 'selected' : ''}>Pessoal</option>
+        <option value="compra" ${g?.cat === 'compra' ? 'selected' : ''}>Compra</option>
+      </select></div>
+      <div><label>Prazo</label><input type="date" id="gDeadline" value="${g?.deadline || ''}"></div>
+    </div>
+    <div class="modal-form-row">
+      <div><label>Valor alvo (opcional)</label><input type="number" step="0.01" id="gTarget" value="${g?.target || ''}" placeholder="Ex: 50000"></div>
+      <div><label>Progresso atual</label><input type="number" step="0.01" id="gCurrent" value="${g?.current || 0}"></div>
+    </div>
+    <div class="modal-form-row full">
+      <div><label>Descrição / próximo passo</label><textarea id="gDesc" rows="3" style="resize:vertical;">${g?.desc || ''}</textarea></div>
+    </div>
+    <div class="modal-actions">
+      ${g ? `<button class="btn btn-danger" onclick="deleteGoal('${g.id}')">Excluir</button>` : ''}
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn" onclick="saveGoal('${editId || ''}')">Salvar</button>
+    </div>
+  `);
+}
+
+async function saveGoal(id) {
+  const data = {
+    id: id || uid(),
+    title: document.getElementById('gTitle').value.trim(),
+    cat: document.getElementById('gCat').value,
+    deadline: document.getElementById('gDeadline').value,
+    target: parseFloat(document.getElementById('gTarget').value) || 0,
+    current: parseFloat(document.getElementById('gCurrent').value) || 0,
+    desc: document.getElementById('gDesc').value.trim(),
+  };
+  if (!data.title) { alert('Título obrigatório'); return; }
+  if (id) {
+    const idx = state.goals.findIndex(g => g.id === id);
+    state.goals[idx] = data;
+  } else {
+    state.goals.push(data);
+  }
+  await saveKey('goals');
+  closeModal();
+  renderAll();
+}
+
+async function deleteGoal(id) {
+  if (!confirm('Excluir meta?')) return;
+  state.goals = state.goals.filter(g => g.id !== id);
+  await saveKey('goals');
+  closeModal();
+  renderAll();
+}
+
+function renderGoals() {
+  const list = document.getElementById('goalsList');
+  let filtered = state.goals;
+  if (activeGoalTab !== 'all') {
+    filtered = filtered.filter(g => g.cat === activeGoalTab);
+  }
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty-state">Nenhuma meta nesta categoria.</div>';
+  } else {
+    list.innerHTML = filtered.map(g => {
+      const pct = g.target > 0 ? Math.min(100, (g.current / g.target) * 100) : (g.current >= 1 ? 100 : 0);
+      const colorMap = { financeira: 'emerald', profissional: 'azure', pessoal: 'plum', compra: '' };
+      return `
+        <div class="goal-item" onclick="openGoalModal('${g.id}')" style="cursor:pointer;">
+          <div class="goal-item-header">
+            <div>
+              <span class="title">${g.title}</span>
+              <span class="tag ${colorMap[g.cat]}">${g.cat}</span>
+            </div>
+            <span class="pct">${pct.toFixed(0)}%</span>
+          </div>
+          ${g.target > 0 ? `<div style="font-size: 12px; color: var(--ink-dim);">R$ ${fmt(g.current)} / R$ ${fmt(g.target)}</div>` : ''}
+          <div class="pbar"><div class="pbar-fill ${colorMap[g.cat]}" style="width: ${pct}%"></div></div>
+          ${g.deadline ? `<div class="deadline">Prazo: ${formatDate(g.deadline)}</div>` : ''}
+          ${g.desc ? `<div style="font-size: 12px; color: var(--ink-dim); margin-top: 6px; font-style: italic;">${g.desc}</div>` : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Dashboard preview - top 3
+  const dashList = document.getElementById('dashGoalsList');
+  if (!state.goals.length) {
+    dashList.innerHTML = '<div class="empty-state">Nenhuma meta cadastrada — vá em <strong>Metas Anuais</strong></div>';
+  } else {
+    const top3 = state.goals.slice(0, 3);
+    dashList.innerHTML = top3.map(g => {
+      const pct = g.target > 0 ? Math.min(100, (g.current / g.target) * 100) : (g.current >= 1 ? 100 : 0);
+      const colorMap = { financeira: 'emerald', profissional: 'azure', pessoal: 'plum', compra: '' };
+      return `
+        <div class="goal-item" style="padding: 10px 0;">
+          <div class="goal-item-header">
+            <span class="title" style="font-size: 13px;">${g.title}</span>
+            <span class="pct">${pct.toFixed(0)}%</span>
+          </div>
+          <div class="pbar"><div class="pbar-fill ${colorMap[g.cat]}" style="width: ${pct}%"></div></div>
+        </div>
+      `;
+    }).join('');
+  }
+  document.getElementById('goalsBadge').textContent = state.goals.length;
+}
+
+// ===== HABITS =====
+function openHabitModal() {
+  showModal(`
+    <h3>Novo hábito</h3>
+    <div class="modal-form-row full">
+      <div><label>Nome do hábito</label><input type="text" id="habitName" placeholder="Ex: Ler 30min, Meditar, Sem celular após 22h..."></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn" onclick="saveHabit()">Criar</button>
+    </div>
+  `);
+}
+
+async function saveHabit() {
+  const name = document.getElementById('habitName').value.trim();
+  if (!name) return;
+  state.habits.push({ id: uid(), name });
+  await saveKey('habits');
+  closeModal();
+  renderHabits();
+}
+
+async function deleteHabit(id) {
+  if (!confirm('Excluir hábito?')) return;
+  state.habits = state.habits.filter(h => h.id !== id);
+  delete state.habitLog[id];
+  await saveKey('habits');
+  await saveKey('habitLog');
+  renderHabits();
+}
+
+async function toggleHabit(habitId, day) {
+  const wk = getWeekKey();
+  const k = `${wk}-${day}`;
+  if (!state.habitLog[habitId]) state.habitLog[habitId] = {};
+  state.habitLog[habitId][k] = !state.habitLog[habitId][k];
+  await saveKey('habitLog');
+  renderHabits();
+}
+
+function renderHabits() {
+  const list = document.getElementById('habitsList');
+  if (!state.habits.length) {
+    list.innerHTML = '<div class="empty-state">Nenhum hábito ainda. Crie um para começar.</div>';
+    document.getElementById('habitRing').setAttribute('stroke-dasharray', '0 264');
+    document.getElementById('habitRingText').textContent = '0%';
+    document.getElementById('habitSummary').textContent = '— sem hábitos';
+    return;
+  }
+  const wk = getWeekKey();
+  const today = getWeekDay();
+  let totalDone = 0, totalSlots = 0;
+  list.innerHTML = state.habits.map(h => {
+    const log = state.habitLog[h.id] || {};
+    const cells = [];
+    let streak = 0;
+    for (let d = 0; d < 7; d++) {
+      const k = `${wk}-${d}`;
+      const done = !!log[k];
+      if (d <= today) totalSlots++;
+      if (done && d <= today) totalDone++;
+      cells.push(`<div class="habit-cell ${done ? 'done' : ''}" onclick="toggleHabit('${h.id}', ${d})"></div>`);
+    }
+    // streak: count from latest filled day backward
+    const allKeys = Object.keys(log).filter(k => log[k]).sort();
+    for (let i = allKeys.length - 1; i >= 0; i--) streak++;
+    return `
+      <div class="habit-row">
+        <div class="habit-name" onclick="deleteHabit('${h.id}')" title="Clique para excluir" style="cursor:pointer;">${h.name}</div>
+        ${cells.join('')}
+        <div class="habit-streak">${streak}d</div>
+      </div>
+    `;
+  }).join('');
+
+  const pct = totalSlots > 0 ? (totalDone / totalSlots) * 100 : 0;
+  const dashArray = `${(pct / 100) * 264} 264`;
+  document.getElementById('habitRing').setAttribute('stroke-dasharray', dashArray);
+  document.getElementById('habitRingText').textContent = pct.toFixed(0) + '%';
+  document.getElementById('habitSummary').textContent = `${totalDone} de ${totalSlots} marcados`;
+}
+
+// ===== ENERGY/FOCUS =====
+function setupDots(dotsId, labelId, stateKey) {
+  const dots = document.querySelectorAll(`#${dotsId} .dot`);
+  const today = todayISO();
+  dots.forEach(d => {
+    d.addEventListener('click', async () => {
+      const v = parseInt(d.dataset.val);
+      state[stateKey][today] = v;
+      await saveKey(stateKey);
+      renderDots(dotsId, labelId, stateKey);
+    });
+  });
+}
+
+function renderDots(dotsId, labelId, stateKey) {
+  const today = todayISO();
+  const v = state[stateKey][today] || 0;
+  const dots = document.querySelectorAll(`#${dotsId} .dot`);
+  dots.forEach((d, i) => d.classList.toggle('active', i < v));
+  const labels = ['—', 'Muito baixo', 'Baixo', 'Médio', 'Alto', 'Muito alto'];
+  document.getElementById(labelId).textContent = labels[v] || '—';
+}
+
+// ===== FAMILY =====
+async function addFamilyTime() {
+  const date = document.getElementById('famDate').value || todayISO();
+  const hours = parseFloat(document.getElementById('famHours').value);
+  const activity = document.getElementById('famActivity').value.trim();
+  if (!hours || !activity) { alert('Preencha duração e atividade'); return; }
+  state.familyTime.push({ id: uid(), date, hours, activity });
+  state.familyTime.sort((a, b) => b.date.localeCompare(a.date));
+  await saveKey('familyTime');
+  document.getElementById('famHours').value = '';
+  document.getElementById('famActivity').value = '';
+  renderFamily();
+}
+
+async function deleteFamily(id) {
+  state.familyTime = state.familyTime.filter(f => f.id !== id);
+  await saveKey('familyTime');
+  renderFamily();
+}
+
+async function saveFamilyGoal() {
+  state.familyGoal = parseFloat(document.getElementById('famGoalInput').value) || 0;
+  await saveKey('familyGoal');
+  renderFamily();
+}
+
+function renderFamily() {
+  const weekItems = state.familyTime.filter(f => isThisWeek(f.date));
+  const total = weekItems.reduce((s, f) => s + Number(f.hours), 0);
+  document.getElementById('famWeekTotal').textContent = total.toFixed(1).replace('.0', '');
+  document.getElementById('famWeekCount').textContent = `${weekItems.length} momentos registrados`;
+  document.getElementById('famGoalInput').value = state.familyGoal || '';
+  const pct = state.familyGoal > 0 ? Math.min(100, (total / state.familyGoal) * 100) : 0;
+  document.getElementById('famGoalBar').style.width = pct + '%';
+  document.getElementById('familyTime').textContent = total.toFixed(1).replace('.0', '') + 'h';
+
+  const list = document.getElementById('famList');
+  if (!state.familyTime.length) {
+    list.innerHTML = '<div class="empty-state">Nenhum momento registrado ainda.</div>';
+  } else {
+    list.innerHTML = state.familyTime.slice(0, 20).map(f => `
+      <div class="list-item">
+        <div>
+          <div class="name">${f.activity}</div>
+          <div class="meta">${formatDate(f.date)}</div>
+        </div>
+        <div class="amount">${f.hours}h</div>
+        <button class="btn-danger btn btn-sm" onclick="deleteFamily('${f.id}')">×</button>
+      </div>
+    `).join('');
+  }
+}
+
+// ===== STUDY =====
+function openStudyModal(editId = null) {
+  const s = editId ? state.studyItems.find(x => x.id === editId) : null;
+  showModal(`
+    <h3>${s ? 'Editar' : 'Novo'} item de estudo</h3>
+    <div class="modal-form-row full">
+      <div><label>Título</label><input type="text" id="stTitle" value="${s ? s.title : ''}" placeholder="Ex: Curso de Python, livro Atomic Habits..."></div>
+    </div>
+    <div class="modal-form-row">
+      <div><label>Tipo</label><select id="stType">
+        <option value="curso" ${s?.type === 'curso' ? 'selected' : ''}>Curso</option>
+        <option value="livro" ${s?.type === 'livro' ? 'selected' : ''}>Livro</option>
+        <option value="certificacao" ${s?.type === 'certificacao' ? 'selected' : ''}>Certificação</option>
+        <option value="outro" ${s?.type === 'outro' ? 'selected' : ''}>Outro</option>
+      </select></div>
+      <div><label>Status</label><select id="stStatus">
+        <option value="andamento" ${s?.status === 'andamento' ? 'selected' : ''}>Em andamento</option>
+        <option value="planejado" ${s?.status === 'planejado' ? 'selected' : ''}>Planejado</option>
+        <option value="concluido" ${s?.status === 'concluido' ? 'selected' : ''}>Concluído</option>
+      </select></div>
+    </div>
+    <div class="modal-form-row">
+      <div><label>Progresso (%)</label><input type="number" min="0" max="100" id="stProgress" value="${s?.progress || 0}"></div>
+      <div><label>Total de horas estimadas</label><input type="number" step="0.5" id="stTotalHours" value="${s?.totalHours || 0}"></div>
+    </div>
+    <div class="modal-actions">
+      ${s ? `<button class="btn btn-danger" onclick="deleteStudy('${s.id}')">Excluir</button>` : ''}
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn" onclick="saveStudy('${editId || ''}')">Salvar</button>
+    </div>
+  `);
+}
+
+async function saveStudy(id) {
+  const data = {
+    id: id || uid(),
+    title: document.getElementById('stTitle').value.trim(),
+    type: document.getElementById('stType').value,
+    status: document.getElementById('stStatus').value,
+    progress: parseFloat(document.getElementById('stProgress').value) || 0,
+    totalHours: parseFloat(document.getElementById('stTotalHours').value) || 0,
+  };
+  if (!data.title) { alert('Título obrigatório'); return; }
+  if (id) {
+    const idx = state.studyItems.findIndex(x => x.id === id);
+    state.studyItems[idx] = data;
+  } else {
+    state.studyItems.push(data);
+  }
+  await saveKey('studyItems');
+  closeModal();
+  renderStudy();
+}
+
+async function deleteStudy(id) {
+  state.studyItems = state.studyItems.filter(s => s.id !== id);
+  await saveKey('studyItems');
+  closeModal();
+  renderStudy();
+}
+
+async function logStudySession() {
+  const itemId = document.getElementById('studySession').value;
+  const hours = parseFloat(document.getElementById('studySessionHours').value);
+  if (!itemId || !hours) { alert('Selecione item e horas'); return; }
+  state.studySessions.push({ id: uid(), itemId, hours, date: todayISO() });
+  await saveKey('studySessions');
+  document.getElementById('studySessionHours').value = '';
+  renderStudy();
+}
+
+function renderStudy() {
+  const sel = document.getElementById('studySession');
+  sel.innerHTML = '<option value="">Selecione...</option>' + state.studyItems.map(s => `<option value="${s.id}">${s.title}</option>`).join('');
+
+  const list = document.getElementById('studyList');
+  if (!state.studyItems.length) {
+    list.innerHTML = '<div class="empty-state">Adicione cursos e livros que está estudando.</div>';
+  } else {
+    list.innerHTML = state.studyItems.map(s => `
+      <div class="goal-item" onclick="openStudyModal('${s.id}')" style="cursor:pointer;">
+        <div class="goal-item-header">
+          <div>
+            <span class="title">${s.title}</span>
+            <span class="tag azure">${s.type}</span>
+            <span class="tag ${s.status === 'concluido' ? 'emerald' : s.status === 'andamento' ? 'gold' : ''}">${s.status}</span>
+          </div>
+          <span class="pct">${s.progress}%</span>
+        </div>
+        <div class="pbar"><div class="pbar-fill azure" style="width: ${s.progress}%"></div></div>
+      </div>
+    `).join('');
+  }
+  document.getElementById('studyActive').textContent = state.studyItems.filter(s => s.status === 'andamento').length;
+  document.getElementById('studyDone').textContent = state.studyItems.filter(s => s.status === 'concluido').length;
+  const weekHours = state.studySessions.filter(s => isThisWeek(s.date)).reduce((acc, s) => acc + Number(s.hours), 0);
+  document.getElementById('studyWeekHours').textContent = weekHours.toFixed(1).replace('.0', '');
+  document.getElementById('studyTime').textContent = weekHours.toFixed(1).replace('.0', '') + 'h';
+}
+
+// ===== WORKOUT =====
+function openWorkoutModal() {
+  showModal(`
+    <h3>Registrar treino</h3>
+    <div class="modal-form-row">
+      <div><label>Data</label><input type="date" id="wkDate" value="${todayISO()}"></div>
+      <div><label>Tipo</label><select id="wkType">
+        <option>Musculação</option>
+        <option>Corrida</option>
+        <option>Bicicleta</option>
+        <option>Natação</option>
+        <option>Yoga / Mobilidade</option>
+        <option>Esporte coletivo</option>
+        <option>Outro</option>
+      </select></div>
+    </div>
+    <div class="modal-form-row">
+      <div><label>Duração (min)</label><input type="number" id="wkDuration" placeholder="60"></div>
+      <div><label>Intensidade (1-5)</label><input type="number" min="1" max="5" id="wkIntensity" value="3"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn" onclick="saveWorkout()">Salvar</button>
+    </div>
+  `);
+}
+
+async function saveWorkout() {
+  const data = {
+    id: uid(),
+    date: document.getElementById('wkDate').value,
+    type: document.getElementById('wkType').value,
+    duration: parseInt(document.getElementById('wkDuration').value) || 0,
+    intensity: parseInt(document.getElementById('wkIntensity').value) || 3,
+  };
+  state.workouts.push(data);
+  state.workouts.sort((a, b) => b.date.localeCompare(a.date));
+  await saveKey('workouts');
+  closeModal();
+  renderWorkouts();
+}
+
+async function deleteWorkout(id) {
+  state.workouts = state.workouts.filter(w => w.id !== id);
+  await saveKey('workouts');
+  renderWorkouts();
+}
+
+async function saveWorkoutGoal() {
+  state.workoutGoal = parseInt(document.getElementById('wkGoal').value) || 0;
+  await saveKey('workoutGoal');
+}
+
+function renderWorkouts() {
+  const list = document.getElementById('workoutList');
+  if (!state.workouts.length) {
+    list.innerHTML = '<div class="empty-state">Nenhum treino registrado.</div>';
+  } else {
+    list.innerHTML = state.workouts.slice(0, 20).map(w => `
+      <div class="list-item">
+        <div>
+          <div class="name">${w.type}</div>
+          <div class="meta">${formatDate(w.date)} · ${w.duration}min · intensidade ${w.intensity}/5</div>
+        </div>
+        <div class="amount">${w.duration}min</div>
+        <button class="btn-danger btn btn-sm" onclick="deleteWorkout('${w.id}')">×</button>
+      </div>
+    `).join('');
+  }
+  const week = state.workouts.filter(w => isThisWeek(w.date)).length;
+  const month = state.workouts.filter(w => isThisMonth(w.date)).length;
+  document.getElementById('wkWeek').textContent = week;
+  document.getElementById('wkMonth').textContent = month;
+  document.getElementById('wkGoal').value = state.workoutGoal || '';
+  document.getElementById('workoutCount').textContent = week;
+
+  // streak (consecutive days with workouts)
+  const dates = [...new Set(state.workouts.map(w => w.date))].sort().reverse();
+  let streak = 0;
+  let cursor = new Date();
+  for (const d of dates) {
+    const dStr = cursor.toISOString().slice(0, 10);
+    if (d === dStr) {
+      streak++;
+      cursor.setDate(cursor.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  document.getElementById('wkStreak').textContent = streak;
+}
+
+// ===== TRIPS =====
+function openTripModal(editId = null) {
+  const t = editId ? state.trips.find(x => x.id === editId) : null;
+  showModal(`
+    <h3>${t ? 'Editar' : 'Novo'} plano</h3>
+    <div class="modal-form-row full">
+      <div><label>Título</label><input type="text" id="trTitle" value="${t ? t.title : ''}" placeholder="Ex: Praia em janeiro, novo MacBook..."></div>
+    </div>
+    <div class="modal-form-row">
+      <div><label>Tipo</label><select id="trType">
+        <option value="viagem" ${t?.type === 'viagem' ? 'selected' : ''}>Viagem</option>
+        <option value="compra" ${t?.type === 'compra' ? 'selected' : ''}>Compra</option>
+        <option value="evento" ${t?.type === 'evento' ? 'selected' : ''}>Evento</option>
+      </select></div>
+      <div><label>Data alvo</label><input type="date" id="trDate" value="${t?.date || ''}"></div>
+    </div>
+    <div class="modal-form-row">
+      <div><label>Custo estimado (R$)</label><input type="number" step="0.01" id="trCost" value="${t?.cost || 0}"></div>
+      <div><label>Já guardado (R$)</label><input type="number" step="0.01" id="trSaved" value="${t?.saved || 0}"></div>
+    </div>
+    <div class="modal-form-row full">
+      <div><label>Observações</label><textarea id="trNotes" rows="3" style="resize:vertical;">${t?.notes || ''}</textarea></div>
+    </div>
+    <div class="modal-actions">
+      ${t ? `<button class="btn btn-danger" onclick="deleteTrip('${t.id}')">Excluir</button>` : ''}
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn" onclick="saveTrip('${editId || ''}')">Salvar</button>
+    </div>
+  `);
+}
+
+async function saveTrip(id) {
+  const data = {
+    id: id || uid(),
+    title: document.getElementById('trTitle').value.trim(),
+    type: document.getElementById('trType').value,
+    date: document.getElementById('trDate').value,
+    cost: parseFloat(document.getElementById('trCost').value) || 0,
+    saved: parseFloat(document.getElementById('trSaved').value) || 0,
+    notes: document.getElementById('trNotes').value.trim(),
+  };
+  if (!data.title) { alert('Título obrigatório'); return; }
+  if (id) {
+    const idx = state.trips.findIndex(x => x.id === id);
+    state.trips[idx] = data;
+  } else {
+    state.trips.push(data);
+  }
+  state.trips.sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999'));
+  await saveKey('trips');
+  closeModal();
+  renderTrips();
+}
+
+async function deleteTrip(id) {
+  state.trips = state.trips.filter(t => t.id !== id);
+  await saveKey('trips');
+  closeModal();
+  renderTrips();
+}
+
+function renderTrips() {
+  const list = document.getElementById('tripsList');
+  if (!state.trips.length) {
+    list.innerHTML = '<div class="empty-state">Nenhuma viagem ou compra planejada ainda.</div>';
+  } else {
+    list.innerHTML = state.trips.map(t => {
+      const pct = t.cost > 0 ? Math.min(100, (t.saved / t.cost) * 100) : 0;
+      const icons = { viagem: '✈', compra: '◆', evento: '★' };
+      return `
+        <div class="goal-item" onclick="openTripModal('${t.id}')" style="cursor:pointer;">
+          <div class="goal-item-header">
+            <div>
+              <span style="font-size: 16px; margin-right: 6px;">${icons[t.type] || '◆'}</span>
+              <span class="title">${t.title}</span>
+              <span class="tag">${t.type}</span>
+            </div>
+            <span class="pct">${pct.toFixed(0)}%</span>
+          </div>
+          <div style="font-size: 12px; color: var(--ink-dim); margin: 4px 0;">R$ ${fmt(t.saved)} / R$ ${fmt(t.cost)}${t.date ? ` · ${formatDate(t.date)}` : ''}</div>
+          <div class="pbar"><div class="pbar-fill" style="width: ${pct}%"></div></div>
+          ${t.notes ? `<div style="font-size: 12px; color: var(--ink-faint); margin-top: 6px; font-style: italic;">${t.notes}</div>` : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Dashboard preview
+  const dashTrips = document.getElementById('dashTrips');
+  const upcoming = state.trips.filter(t => t.date && t.date >= todayISO()).slice(0, 3);
+  if (!upcoming.length) {
+    dashTrips.innerHTML = '<div class="empty-state">Nenhum plano cadastrado</div>';
+  } else {
+    dashTrips.innerHTML = upcoming.map(t => {
+      const pct = t.cost > 0 ? Math.min(100, (t.saved / t.cost) * 100) : 0;
+      return `
+        <div class="goal-item" style="padding: 10px 0;">
+          <div class="goal-item-header">
+            <span class="title" style="font-size: 13px;">${t.title}</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-dim);">${formatDate(t.date)}</span>
+          </div>
+          <div class="pbar"><div class="pbar-fill" style="width: ${pct}%"></div></div>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+// ===== MODAL =====
+function showModal(html) {
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modalBackdrop').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('modalBackdrop').classList.remove('show');
+}
+document.getElementById('modalBackdrop').addEventListener('click', e => {
+  if (e.target.id === 'modalBackdrop') closeModal();
+});
+
+// ===== RESET =====
+async function resetAll() {
+  if (!confirm('⚠️ Isso vai APAGAR todos os seus dados. Tem certeza?')) return;
+  if (!confirm('Última chance — confirma o reset?')) return;
+  for (const k of Object.keys(state)) {
+    await storageDel('lifeos_' + k);
+  }
+  location.reload();
+}
+
+// ===== RENDER ALL =====
+function renderAll() {
+  renderTransactions();
+  renderReserve();
+  renderCards();
+  renderInvestments();
+  renderGoals();
+  renderHabits();
+  renderDots('energyDots', 'energyLabel', 'energy');
+  renderDots('focusDots', 'focusLabel', 'focus');
+  renderFamily();
+  renderStudy();
+  renderWorkouts();
+  renderTrips();
+}
+
+// ===== INIT =====
+async function init() {
+  document.getElementById('txDate').value = todayISO();
+  document.getElementById('famDate').value = todayISO();
+  await loadState();
+  setupDots('energyDots', 'energyLabel', 'energy');
+  setupDots('focusDots', 'focusLabel', 'focus');
+  updateBreadcrumb('dashboard');
+  updateTopbar();
+  setInterval(updateTopbar, 60000);
+  renderAll();
+}
+
+init();
+
+</script>
+</body>
+</html>
